@@ -19,7 +19,6 @@ function Onboard() {
                 <Input type={"text"} value={userName} onChange={e => setUserName((e.target as unknown as HTMLTextAreaElement).value)}/>
                 <RouterButton onClick={handleSubmit} route={Routes.Lobby} text={"start trading stonks"}/>
             </form>
-
         </div>
     );
 }
