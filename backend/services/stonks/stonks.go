@@ -71,8 +71,8 @@ type User struct {
 }
 
 type StonkInfo struct {
-	ID     string
-	Prices Prices
+	ID         string
+	TimeSeries []DataPoint
 	// TODO: Sort by timestamps!
 	MatchHistory []Match
 	Orders       []Order
@@ -174,7 +174,7 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	// TODO: return the shit
 
 	return StonkInfo{
-		Prices:       s.prices,
+		TimeSeries:   s.prices[stonk],
 		Orders:       orders,
 		MatchHistory: matches,
 	}, nil
