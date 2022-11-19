@@ -16,8 +16,13 @@ function Onboard() {
         if(userName === ""){
             alert("Please specify a valid user name to participate in GameOfStonks!");
         } else {
-            register(userName).then((resp) => navigate(Routes.Lobby));
-            // TODO: all games already full
+            register(userName).then((resp) => {
+                if (resp.ret_1 == null){
+                    navigate(Routes.Lobby);
+                } else {
+                    alert("It seems like the all sessions are currently full, please wait, clear cookies and retry!")
+                }
+            });
         }
     };
 

@@ -1,5 +1,5 @@
 function StartStocks() {
-  const item = require("./../assets/paperclip.png"); // TODO: replace with dynamic icon image
+  const item = require("./../assets/stonk_icons/paperclip.png"); // TODO: replace with dynamic icon image
 
   return (
     <div className="flex flex-col justify-center items-center h-screen">
