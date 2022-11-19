@@ -1,10 +1,30 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Button } from "../components/buttons/Button";
+import { Card } from "../components/card/Card";
+import { Currency } from "../components/Currency";
 import { StonkGraph } from "../components/graphs/StonkGraph";
 import { Spinner } from "../components/spinner/Spinner";
+import SvgArrowRight from "../icons/ArrowRight";
+import SvgMinus from "../icons/Minus";
+import SvgPlus from "../icons/Plus";
 import { useStonkState } from "../model/store";
 import { Routes } from "../router/router";
-import {StonkInfo, StonkName} from "../services/vo-stonks";
+import { StonkInfo, StonkName } from "../services/vo-stonks";
+
+const formatter = new Intl.NumberFormat("en-IN", {
+  maximumSignificantDigits: 3,
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+});
+
+const CurrencyDisplay = (props: { value: number }) => {
+  return (
+    <>
+      {formatter.format(props.value)} <Currency />
+    </>
+  );
+};
 
 function Detail() {
   const getStonkInfo = useStonkState((state) => state.getStonkInfo);
@@ -13,6 +33,7 @@ function Detail() {
   const [stonk, setStonk] = useState<StonkInfo | undefined>();
 
   useEffect(() => {
+    console.log("render", stonkName);
     const onError = () => {
       navigate(Routes.Home);
       return;
@@ -21,7 +42,7 @@ function Detail() {
     // uknown stonk or not set
     if (!stonkName) {
       console.log("error");
-      // onError();
+      onError();
       return;
     }
 
@@ -33,23 +54,62 @@ function Detail() {
         setStonk(info);
       })
       .catch();
-  }, [navigate, setStonk, getStonkInfo, stonkName]);
+  }, []);
 
   if (!stonk) {
     return <Spinner />;
   }
 
   return (
-    <div>
-      <h2>{stonk.ID}</h2>
-      <StonkGraph stonk={stonk} />
-      <ul>
-        {stonk.Orders?.map((order, index) => (
-          <li key={index}>
-            {order.User} {order.Quantity}
-          </li>
-        ))}
-      </ul>
+    <div className="p-7">
+      <Card className="m-0">
+        <div className="flex justify-between">
+          <h2>{stonk.Name}</h2>
+          <h2>
+            <CurrencyDisplay
+              value={
+                stonk.TimeSeries?.[stonk.TimeSeries?.length - 1].Value ?? 0.0
+              }
+            />
+          </h2>
+        </div>
+
+        <StonkGraph stonk={stonk} />
+      </Card>
+      <Card className="mx-0">
+        <h2>Orders</h2>
+        <ul>
+          {stonk.Orders?.map((order, index) => (
+            <li key={index}>
+              {order.UserName} {order.Quantity}
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <Card className="mx-0">
+        <h2>History</h2>
+        <ul>
+          {stonk.MatchHistory?.map((order, index) => (
+            <li key={index} className="flex ">
+              {order.UserSell} <SvgArrowRight /> {order.UserSell}
+            </li>
+          ))}
+        </ul>
+      </Card>
+      <div className="flex justify-evenly">
+        <Button>
+          <div className="flex items-center gap-4">
+            <SvgPlus /> Buy
+          </div>
+        </Button>
+        <Button>
+          <div className="flex items-center gap-4">
+            <SvgMinus />
+            Sell
+          </div>
+        </Button>
+      </div>
     </div>
   );
 }

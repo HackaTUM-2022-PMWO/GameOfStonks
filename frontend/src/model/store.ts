@@ -2,7 +2,7 @@ import vanillaCreate from "zustand/vanilla";
 import create from "zustand";
 import { StonksServiceClient } from "../services/stonk-client";
 import { getClient } from "../services/transport";
-import {StonkInfo, StonkName, User} from "../services/vo-stonks";
+import { StonkInfo, StonkName, User } from "../services/vo-stonks";
 
 export type StonksState = {
   loading: boolean;
@@ -39,8 +39,8 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
       loading: false,
 
       register: (name: string) => {
-        return withLoading(client.newUser("name")).then((resp) => {
-          set({ username: name, sessionUsers: resp.ret ?? []});
+        return withLoading(client.newUser(name)).then((resp) => {
+          set({ username: name, sessionUsers: resp.ret ?? [] });
           // TODO: start SSE stream here
           return resp;
         });

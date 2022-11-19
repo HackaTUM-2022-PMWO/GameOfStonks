@@ -58,16 +58,19 @@ export const GlobalGraph = (props: GraphProps) => {
 
   return (
     <>
-      <LineChart width={500} height={300} data={data}>
+      <LineChart data={data}>
         <Tooltip />
         <Line type="monotone" dataKey="uv" stroke="#D043AC" strokeWidth={5} />
         <Line type="monotone" dataKey="pv" stroke="#fff" strokeWidth={5} />
       </LineChart>
-      <ul>
+      <ul className="flex">
         {users?.map((user, index) => (
-          <PlayerListItem key={user.Name + index} value={user.Name} />
+          <PlayerListItem
+            idx={index}
+            key={user.Name + index}
+            value={user.Name}
+          />
         ))}
-        {/* <PlayerListItem value={"Wlad"} /> */}
       </ul>
     </>
   );

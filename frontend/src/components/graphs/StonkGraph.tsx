@@ -10,9 +10,18 @@ export const StonkGraph = (props: GraphProps) => {
   // TODO: use global state for all users here
 
   return (
-    <LineChart width={500} height={300} data={[]}>
+    <LineChart
+      width={500}
+      height={300}
+      data={
+        props.stonk.TimeSeries?.map((s) => ({
+          time: s.Time,
+          value: s.Value,
+        })) ?? []
+      }
+    >
       <Tooltip />
-      <Line type="monotone" dataKey="pv" stroke="#fff" strokeWidth={5} />
+      <Line type="monotone" dataKey="value" stroke="#fff" strokeWidth={5} />
     </LineChart>
   );
 };
