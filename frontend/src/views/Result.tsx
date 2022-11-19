@@ -10,17 +10,24 @@ function Result() {
     const first = require(`./../assets/awards/1.png`);
     const second = require(`./../assets/awards/2.png`);
     const third = require(`./../assets/awards/3.png`);
+    const [startAnimation, setStartAnimation] = useState(true);
     const [nrConfetti, setNrConfetti] = useState(200);
     const delay = (ms: number | undefined) => new Promise(
         resolve => setTimeout(resolve, ms)
     );
 
     useEffect(() => {
+        async function changeAnimation(){
+            await delay(5000)
+        }
         async function redirectHome() {
             await delay(10000)
         }
 
-        redirectHome().then(r => setNrConfetti(0));
+        changeAnimation().then(() => {
+            setStartAnimation(false);
+            redirectHome().then(() => setNrConfetti(0))
+        });
     })
 
 
@@ -30,50 +37,55 @@ function Result() {
     }, {name: "Spong", coins: 289}, {name: "Trump", coins: 50}]
 
     return (
-        <div className="flex flex-col gap-8 items-center">
-            <div className="flex items-end justify-center min-h-[90vh]">
-                <div className="grid items-end mx-5 grid-cols-3">
-                    <div className="flex flex-col content-center text-center gap-4">
-                        <h1>{results[1].name}</h1>
-                        <div
-                            className="flex flex-col items-center gap-8 h-[70vh] bg-accent2 shadow-md drop-shadow-xl rounded">
-                            <img className=" w-[50%]" src={second} alt={"second place"}/>
-                            <div className="flex">
-                                <h1>{results[1].coins}</h1>
-                                <Currency/>
+        <div>
+            {startAnimation ? <div className="flex flex-col justify-center items-center h-screen">
+                    <iframe src="https://giphy.com/embed/QQ1K0jv4JyUR750vrr" width="480" height="480"></iframe>
+                </div> :
+                <div className="flex flex-col gap-8 items-center">
+                    <div className="flex items-end justify-center min-h-[90vh]">
+                        <div className="grid items-end mx-5 grid-cols-3">
+                            <div className="flex flex-col content-center text-center gap-4">
+                                <h1>{results[1].name}</h1>
+                                <div
+                                    className="flex flex-col items-center gap-8 h-[70vh] bg-accent2 shadow-md drop-shadow-xl rounded">
+                                    <img className=" w-[50%]" src={second} alt={"second place"}/>
+                                    <div className="flex">
+                                        <h1>{results[1].coins}</h1>
+                                        <Currency/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col content-center text-center gap-4">
+                                <h1>{results[0].name}</h1>
+                                <div
+                                    className="flex flex-col items-center gap-8 h-[80vh] bg-accent2 shadow-md drop-shadow-xl rounded">
+                                    <img className=" w-[50%]" src={first} alt={"first place"}/>
+                                    <div className="flex">
+                                        <h1>{results[0].coins}</h1>
+                                        <Currency/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col content-center text-center gap-4">
+                                <h1>{results[2].name}</h1>
+                                <div
+                                    className="flex flex-col items-center gap-8 h-[60vh] bg-accent2 shadow-md drop-shadow-xl rounded">
+                                    <img className=" w-[50%]" src={third} alt={"third place"}/>
+                                    <div className="flex">
+                                        <h1>{results[2].coins}</h1>
+                                        <Currency/>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-col content-center text-center gap-4">
-                        <h1>{results[0].name}</h1>
-                        <div
-                            className="flex flex-col items-center gap-8 h-[80vh] bg-accent2 shadow-md drop-shadow-xl rounded">
-                            <img className=" w-[50%]" src={first} alt={"first place"}/>
-                            <div className="flex">
-                                <h1>{results[0].coins}</h1>
-                                <Currency/>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex flex-col content-center text-center gap-4">
-                        <h1>{results[2].name}</h1>
-                        <div
-                            className="flex flex-col items-center gap-8 h-[60vh] bg-accent2 shadow-md drop-shadow-xl rounded">
-                            <img className=" w-[50%]" src={third} alt={"third place"}/>
-                            <div className="flex">
-                                <h1>{results[2].coins}</h1>
-                                <Currency/>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <RouterButton route={Routes.Onboard}>End Game</RouterButton>
-            <Confetti
-                width={width * 0.98}
-                height={height}
-                numberOfPieces={nrConfetti}
-            />
+                    <RouterButton route={Routes.Onboard}>End Game</RouterButton>
+                    <Confetti
+                        width={width * 0.98}
+                        height={height}
+                        numberOfPieces={nrConfetti}
+                    />
+                </div>}
         </div>
     );
 }
