@@ -21,6 +21,9 @@ export enum Routes {
   Trade = "/trade",
 }
 
+export const getStonkUrl = (stonkId: string) =>
+  Routes.Detail.replace(":stonkName", stonkId);
+
 export const router = createBrowserRouter([
   {
     path: "/",
