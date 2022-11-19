@@ -29,6 +29,14 @@ var (
 		stonks.StonkMate:      1.8,
 	}
 
+	startStonks = map[stonks.StonkName]int{
+		stonks.StonkPaperClip: 5,
+		stonks.StonkScissors:  2,
+		stonks.StonkPencil:    15,
+		stonks.StonkHouse:     0,
+		stonks.StonkMate:      20,
+	}
+
 	startMoney float64 = 1000.0
 )
 
@@ -181,7 +189,16 @@ func main() {
 	match := matcher.NewMatcher(l, ctx, stonkNames, time.Millisecond*2000, orderP, matchP, matchUpdateCh)
 	defer match.Close()
 
-	service := stonks.NewStonksService(l, initialStonkPrices, startMoney, orderP, matchP, matchUpdateCh, broadcastCh)
+	service := stonks.NewStonksService(
+		l,
+		initialStonkPrices,
+		startMoney,
+		startStonks,
+		orderP,
+		matchP,
+		matchUpdateCh,
+		broadcastCh,
+	)
 
 	// default handler
 	h :=

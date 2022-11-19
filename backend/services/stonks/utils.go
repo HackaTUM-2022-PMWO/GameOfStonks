@@ -5,7 +5,6 @@ import (
 	http "net/http"
 )
 
-// TODO: Need to update player NetWorth
 func (s *StonksService) update() error {
 	// drain the updates chanel until it is empty
 	updated := false
@@ -22,6 +21,18 @@ func (s *StonksService) update() error {
 					Value: value,
 				})
 			}
+
+			// Add a new entry to the users NetWorthTimeSeries-DataPoints
+			for userId, user := range s.activeUsers {
+				user.mu.Lock()
+				user.NetWorthTimeSeries = append(user.NetWorthTimeSeries, DataPoint{
+					Time:  user.NetWorthTimeSeries.LatestTime() + 1,
+					Value: user.NetWorthTimeSeries.LatestValue(),
+				})
+				s.activeUsers[userId] = user
+				user.mu.Unlock()
+			}
+
 			// update the value to the actual new on if there is a match for this stock
 			for _, match := range matches {
 				stonkName := StonkName(match.Stonk)
@@ -31,15 +42,31 @@ func (s *StonksService) update() error {
 
 				// update the users stock position
 				for userId, user := range s.activeUsers {
-					// FIXME: update the users stock position
+					user.mu.Lock()
+					if userId == match.BuyOrder.User.ID { // if buyer
+						user.Stonks[stonkName] += match.Quantity
+						user.ReservedStonks[stonkName] -= match.Quantity
+						user.ReservedMoney -= float64(match.Quantity) * match.BuyOrder.Price
+						user.Money -= float64(match.Quantity) * match.BuyOrder.Price
+					} else if userId != match.SellOrder.User.ID { // elif seller
+						user.Stonks[stonkName] -= match.Quantity
+						user.Money += float64(match.Quantity) * match.SellOrder.Price
+					} else {
+						user.mu.Unlock()
+						continue
+					}
 
 					// since the stock prices might have been adjusted, we also have to re-evaluate the users net worth
-					// FIXME: Adapt user's NetWorth (Money-ReservedMoney + Stonks_Quantity*Stonk_LastPrice)
+					user.NetWorth = user.Money
+					for stonk, num := range user.Stonks {
+						user.NetWorth += float64(num) * s.prices[stonk].LatestValue()
+					}
 
-					// update the datapoints
-					// FIXME: update the users NetWorthTimeSeries-DataPoints
+					// update the latest NetWorthTimeSeries-DataPoints
+					user.NetWorthTimeSeries[len(user.NetWorthTimeSeries)-1].Value = user.NetWorth
 
 					s.activeUsers[userId] = user
+					user.mu.Unlock()
 				}
 			}
 
@@ -54,7 +81,7 @@ func (s *StonksService) update() error {
 	}
 }
 
-func userExists(r *http.Request, users map[string]User) (bool, string, error) {
+func userExists(r *http.Request, users map[string]*User) (bool, string, error) {
 	cookie, err := r.Cookie("user")
 	if errors.Is(err, http.ErrNoCookie) {
 		// nothing to do

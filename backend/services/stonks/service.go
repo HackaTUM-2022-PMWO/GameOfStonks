@@ -3,6 +3,7 @@ package stonks
 import (
 	http "net/http"
 	"sort"
+	"sync"
 	time "time"
 
 	"github.com/google/uuid"
@@ -31,7 +32,8 @@ type StonksService struct {
 
 	// configuration values
 	//
-	startMoney float64
+	startMoney  float64
+	startStonks map[StonkName]int
 
 	// Time series data for all the stonks
 	prices Prices
@@ -44,14 +46,15 @@ type StonksService struct {
 	msgCh chan interface{}
 
 	// users are only held ephemeraly
-	waitingUsers map[string]User
-	activeUsers  map[string]User
+	waitingUsers map[string]*User
+	activeUsers  map[string]*User
 }
 
 func NewStonksService(
 	l *zap.Logger,
 	initialStonkPrices map[StonkName]float64,
 	startMoney float64,
+	startStonks map[StonkName]int,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
 	matchUpdateCh <-chan []*store.Match,
@@ -61,33 +64,31 @@ func NewStonksService(
 		l:             l.With(zap.String("component", "service")),
 		prices:        NewPrices(initialStonkPrices),
 		startMoney:    startMoney,
+		startStonks:   startStonks,
 		orderP:        orderP,
 		matchP:        matchP,
 		matchUpdateCh: matchUpdateCh,
 		msgCh:         msgCh,
 
-		waitingUsers: make(map[string]User, 5),
-		activeUsers:  make(map[string]User, 5),
+		waitingUsers: make(map[string]*User, 5),
+		activeUsers:  make(map[string]*User, 5),
 	}
 }
 
 type User struct {
-	id string // NOTE: private on purpose
+	mu sync.Mutex
 
-	// TODO: Probably need to add the ID without leaking it to other users (impersenation!)
+	id   string // NOTE: private on purpose
 	Name string
 
 	Money         float64
 	ReservedMoney float64
 
-	Stonks map[StonkName]int
+	Stonks         map[StonkName]int
+	ReservedStonks map[StonkName]int
 
-	// FIXME: The networth actually needs to be initialized if we also give the user stonks to begin with!
-	NetWorth float64
-
+	NetWorth           float64
 	NetWorthTimeSeries DataPoints
-
-	// TODO: Need to create a users NetWorth (i.e. money current values of stonks)
 }
 
 type Match struct {
@@ -132,7 +133,7 @@ type UpdateOrderCmd struct {
 	Price    float64
 }
 
-func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name string) ([]User, *Err) {
+func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name string) ([]*User, *Err) {
 	if r.Method != http.MethodPost {
 		return nil, &Err{"you gotta post wlad"}
 	}
@@ -145,18 +146,36 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 		return nil, &Err{"user already registered"}
 	}
 
-	u := User{
+	u := &User{
 		id:    uuid.New().String(),
 		Name:  name,
 		Money: s.startMoney,
 	}
+
+	// set the number of starting stocks
+	for s, i := range s.startStonks {
+		u.Stonks[s] = i
+	}
+
+	// initialize the networth
+	u.NetWorth = u.Money
+	for stonk, num := range u.Stonks {
+		u.NetWorth += float64(num) * s.prices[stonk].LatestValue()
+	}
+
+	// update the latest NetWorthTimeSeries-DataPoints
+	u.NetWorthTimeSeries[0] = DataPoint{
+		Time:  0,
+		Value: u.NetWorth,
+	}
+
 	s.waitingUsers[u.id] = u
 
 	// Set a cookie
 	cookie := &http.Cookie{Name: "user", Value: u.id, Expires: time.Now().Add(time.Hour * 24 * 7)}
 	http.SetCookie(w, cookie)
 
-	users := make([]User, 0, len(s.waitingUsers))
+	users := make([]*User, 0, len(s.waitingUsers))
 	for _, u := range s.waitingUsers {
 		users = append(users, u)
 	}
@@ -168,8 +187,42 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	return users, nil
 }
 
+func (s *StonksService) GetUserInfo(w http.ResponseWriter, r *http.Request) (*User, []*User, *Err) {
+	if r.Method != http.MethodPost {
+		return nil, nil, &Err{"you gotta post wlad"}
+	}
+
+	exists, userId, err := userExists(r, s.activeUsers)
+	if err != nil {
+		s.l.Error("unable to read user cookie", zap.Error(err))
+		return nil, nil, &Err{"unable to read user cookie"}
+	} else if !exists {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return nil, nil, &Err{"user is not an active user"}
+	}
+
+	user, ok := s.activeUsers[userId]
+	if !ok {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return nil, nil, &Err{"user is not an active user"}
+	}
+
+	otherUsers := make([]*User, 0, len(s.activeUsers)-1)
+	for _, u := range s.waitingUsers {
+		if u.id != userId {
+			otherUsers = append(otherUsers, u)
+		}
+	}
+
+	// sort the users
+	sort.Slice(otherUsers, func(i, j int) bool {
+		return otherUsers[i].Name < otherUsers[j].Name
+	})
+	return user, otherUsers, nil
+}
+
 // TODO: Actually this should be an SSE
-func (s *StonksService) StartSession(w http.ResponseWriter, r *http.Request, id string) ([]User, *Err) {
+func (s *StonksService) StartSession(w http.ResponseWriter, r *http.Request, id string) ([]*User, *Err) {
 	if r.Method != http.MethodPost {
 		return nil, &Err{"you gotta post wlad"}
 	}
@@ -186,7 +239,7 @@ func (s *StonksService) StartSession(w http.ResponseWriter, r *http.Request, id 
 	// make the waitingUsers the active ones
 	s.activeUsers = s.waitingUsers
 
-	users := make([]User, 0, len(s.activeUsers))
+	users := make([]*User, 0, len(s.activeUsers))
 	for _, u := range s.activeUsers {
 		users = append(users, u)
 	}
@@ -284,8 +337,6 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	}, nil
 }
 
-// FIXME: Check that the user actually has the stock in the required quantity - no price checks needed!
-// FIXME: Prevent double spending of stocks
 func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd PlaceOrderCmd) *Err {
 	if r.Method != http.MethodPost {
 		return &Err{"you gotta post wlad"}
@@ -335,6 +386,9 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 		s.l.Error("user is not an active user", zap.String("user_id", userId))
 		return &Err{"user is not an active user"}
 	}
+	// lock the user
+	user.mu.Lock()
+	defer user.mu.Unlock()
 
 	totalPrice := (cmd.Price * float64(cmd.Quantity))
 	if cmd.OrderType == OrderTypeBuy {
@@ -346,10 +400,30 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 				zap.Int("quantity", cmd.Quantity),
 				zap.Error(err),
 			)
-			return &Err{"user has insufficient funds"} // TODO: Create separate error
+			return &Err{"user has insufficient funds"}
 		}
+	} else if cmd.OrderType == OrderTypeSell {
+		// make sure the user has amount of the stock
+		if _, ok := user.ReservedStonks[cmd.Stonk]; !ok {
+			// init if not yet already intialized
+			user.ReservedStonks[cmd.Stonk] = 0
+		}
+
+		if (user.Stonks[cmd.Stonk] - user.ReservedStonks[cmd.Stonk]) < cmd.Quantity {
+			s.l.Error("user has insufficient stocks",
+				zap.String("stonk", string(cmd.Stonk)),
+				zap.Int("user_stonks", user.Stonks[cmd.Stonk]),
+				zap.Int("user_reserved_stonks", user.ReservedStonks[cmd.Stonk]),
+				zap.Int("quantity", cmd.Quantity),
+				zap.Error(err),
+			)
+			return &Err{"user has insufficient stocks"}
+		}
+
+	} else {
+		s.l.Error("unknown OrderType", zap.String("order_type", string(cmd.OrderType)))
+		return &Err{"unknown OrderType"}
 	}
-	// FIXME: handle sells (no overspending, no double spending)
 
 	// create a store order object
 	order := store.Order{
@@ -376,13 +450,19 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 		// increase the reserved money of the user
 		user.ReservedMoney = user.ReservedMoney + totalPrice
 		s.activeUsers[userId] = user
+	} else if cmd.OrderType == OrderTypeSell {
+		// increase the reserved stocks of the user
+		user.ReservedStonks[cmd.Stonk] += cmd.Quantity
+		s.activeUsers[userId] = user
+
+	} else {
+		s.l.Error("unknown OrderType", zap.String("order_type", string(cmd.OrderType)))
+		return &Err{"unknown OrderType"}
 	}
 
 	return nil
 }
 
-// FIXME: Check that the user actually has the stock in the required quantity - no price checks needed!
-// FIXME: Prevent double spending of stocks
 // NOTE: Update order with a quantity of 0 deletes the order
 func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd UpdateOrderCmd) *Err {
 	if r.Method != http.MethodPost {
@@ -432,6 +512,9 @@ func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd 
 		s.l.Error("user is not an active user", zap.String("user_id", userId))
 		return &Err{"user is not an active user"}
 	}
+	// lock the user
+	user.mu.Lock()
+	defer user.mu.Unlock()
 
 	// Get the order
 	order, err := s.orderP.GetOrder(r.Context(), cmd.Id)
@@ -466,13 +549,35 @@ func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd 
 		// make sure the user has sufficient fund and update the total reserved money
 		previousTotal := order.Price * float64(order.Quantity)
 		newTotalPrice := cmd.Price * float64(cmd.Quantity)
-		if (user.Money - user.ReservedMoney + previousTotal) < newTotalPrice {
-			s.l.Error("user has insufficient funds",
-				zap.Float64("price", cmd.Price),
-				zap.Int("quantity", cmd.Quantity),
-				zap.Error(err),
-			)
-			return &Err{"user has insufficient funds"} // TODO: Create separate error
+		if order.Type == store.OrderTypeBuy {
+			if (user.Money - user.ReservedMoney + previousTotal) < newTotalPrice {
+				s.l.Error("user has insufficient funds",
+					zap.Float64("price", cmd.Price),
+					zap.Int("quantity", cmd.Quantity),
+					zap.Error(err),
+				)
+				return &Err{"user has insufficient funds"}
+			}
+		} else if order.Type == store.OrderTypeSell {
+			// make sure the user has amount of the stock
+			if _, ok := user.ReservedStonks[StonkName(order.Stonk)]; !ok {
+				// init if not yet already intialized
+				user.ReservedStonks[StonkName(order.Stonk)] = 0
+			}
+
+			if (user.Stonks[StonkName(order.Stonk)] - user.ReservedStonks[StonkName(order.Stonk)] + order.Quantity) < cmd.Quantity {
+				s.l.Error("user has insufficient stocks",
+					zap.String("stonk", string(StonkName(order.Stonk))),
+					zap.Int("user_stonks", user.Stonks[StonkName(order.Stonk)]),
+					zap.Int("user_reserved_stonks", user.ReservedStonks[StonkName(order.Stonk)]),
+					zap.Int("quantity", cmd.Quantity),
+					zap.Error(err),
+				)
+				return &Err{"user has insufficient stocks"}
+			}
+		} else {
+			s.l.Error("unknown OrderType", zap.String("store_order_type", string(order.Type)))
+			return &Err{"unknown OrderType"}
 		}
 
 		// update the previous order object
@@ -496,16 +601,23 @@ func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd 
 			return &Err{"unable to update order"}
 		}
 
-		// increase the reserved money of the user
-		user.ReservedMoney = user.ReservedMoney - previousTotal + newTotalPrice
-		s.activeUsers[userId] = user
+		if order.Type == store.OrderTypeBuy {
+			// increase the reserved money of the user
+			user.ReservedMoney = user.ReservedMoney - previousTotal + newTotalPrice
+			s.activeUsers[userId] = user
+		} else if order.Type == store.OrderTypeSell {
+			// increase the reserved stocks of the user
+			user.ReservedStonks[StonkName(order.Stonk)] += cmd.Quantity - order.Quantity
+			s.activeUsers[userId] = user
+
+		} else {
+			s.l.Error("unknown OrderType", zap.String("store_order_type", string(order.Type)))
+			return &Err{"unknown OrderType"}
+		}
 
 		return nil
 	}
 }
-
-// TODO: Add functions for:
-// - GetUserInfo (users current portfolie + others)
 
 // TODO: Add SSE for:
 // - StartSession(?)

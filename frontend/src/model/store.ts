@@ -50,7 +50,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
 
       register: (name: string) => {
         return withLoading(client.newUser(name)).then((resp) => {
-          set({ username: name, sessionUsers: resp.ret ?? [] });
+          set({ username: name, sessionUsers: resp.ret as any?? [] });
           // TODO: start SSE stream here
           return resp;
         });
