@@ -12,17 +12,20 @@ import App from "../App";
 
 export enum Routes {
   Onboard = "/",
-  Detail = "/detail/:stonkName",
+  Detail = "/details/:stonkName",
   Home = "/home",
   Lobby = "/lobby",
   Result = "/result",
   Search = "/search",
   StartStocks = "/start",
-  Trade = "/trade",
+  Trade = "/trade/:stonkName/:mode",
 }
 
-export const getStonkUrl = (stonkId: string) =>
-  Routes.Detail.replace(":stonkName", stonkId);
+export const getStonkUrl = (stonkName: string) =>
+  Routes.Detail.replace(":stonkName", stonkName);
+
+export const getTradeUrl = (stonkName: string, mode: "buy" | "sell") =>
+  Routes.Trade.replace(":stonkName", stonkName).replace(":mode", mode);
 
 export const router = createBrowserRouter([
   {

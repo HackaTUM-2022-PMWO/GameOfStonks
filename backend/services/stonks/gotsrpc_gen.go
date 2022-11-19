@@ -16,6 +16,7 @@ const (
 	StonksServiceGoTSRPCProxyNewUser      = "NewUser"
 	StonksServiceGoTSRPCProxyPlaceOrder   = "PlaceOrder"
 	StonksServiceGoTSRPCProxyStartSession = "StartSession"
+	StonksServiceGoTSRPCProxyUpdateOrder  = "UpdateOrder"
 )
 
 type StonksServiceGoTSRPCProxy struct {
@@ -147,6 +148,32 @@ func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Req
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{startSessionRet, startSessionRet_1}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case StonksServiceGoTSRPCProxyUpdateOrder:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		var (
+			arg_cmd UpdateOrderCmd
+		)
+		args = []interface{}{&arg_cmd}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		updateOrderRet := p.service.UpdateOrder(&rw, r, arg_cmd)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{updateOrderRet}
 			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
 				gotsrpc.ErrorCouldNotReply(w)
 				return

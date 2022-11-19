@@ -1,14 +1,21 @@
 import React from "react";
 
-export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+export type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  label?: React.ReactNode;
+};
 
-export function Input({className, ...props}: InputProps) {
+export function Input({ label, className, ...props }: InputProps) {
   return (
-    <input
-      className={`${
-        className ?? ""
-      } text-secondary max-w-sm rounded-md bg-gray-100 border border-2 border-gray-300 py-1 px-3"`}
-      {...props}
-    />
+    <>
+      <label>
+        <small className="block text-left text-l opacity-40">{label}</small>
+        <input
+          className={`${
+            className ?? ""
+          } text-secondary max-w-sm rounded-md bg-gray-100 border-2 border-gray-300 py-1 px-3"`}
+          {...props}
+        />
+      </label>
+    </>
   );
 }

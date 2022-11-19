@@ -2,7 +2,13 @@ import vanillaCreate from "zustand/vanilla";
 import create from "zustand";
 import { StonksServiceClient } from "../services/stonk-client";
 import { getClient } from "../services/transport";
-import { StonkInfo, StonkName, User } from "../services/vo-stonks";
+import {
+  OrderType,
+  PlaceOrderCmd,
+  StonkInfo,
+  StonkName,
+  User,
+} from "../services/vo-stonks";
 
 export type StonksState = {
   loading: boolean;
@@ -20,6 +26,10 @@ export type StonksModifiers = {
   getStonkInfo: (
     stonkName: StonkName
   ) => ReturnType<StonksServiceClient["getStonkInfo"]>;
+
+  placeOrder: (
+    cmd: PlaceOrderCmd
+  ) => ReturnType<StonksServiceClient["placeOrder"]>;
 };
 
 export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
@@ -49,6 +59,12 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
 
       getStonkInfo: (stonk: StonkName) => {
         return withLoading(client.getStonkInfo(stonk));
+      },
+
+      placeOrder: (cmd: PlaceOrderCmd) => {
+        return withLoading(client.placeOrder({ ...cmd })).then((resp) => {
+          return resp;
+        });
       },
     };
   }
