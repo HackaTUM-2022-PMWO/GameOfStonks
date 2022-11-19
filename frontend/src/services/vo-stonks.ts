@@ -19,7 +19,7 @@ export interface Match {
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.Order
 export interface Order {
-	User:string;
+	UserName:string;
 	OrderType:github_com_hackaTUM_GameOfStonks_services_stonks.OrderType;
 	Quantity:number;
 	TimeStamp:number;
@@ -35,9 +35,10 @@ export interface PlaceOrderCmd {
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.StonkInfo
 export interface StonkInfo {
-	ID:string;
+	Name:github_com_hackaTUM_GameOfStonks_services_stonks.StonkName;
 	TimeSeries:Array<github_com_hackaTUM_GameOfStonks_services_stonks.DataPoint>|null;
 	MatchHistory:Array<github_com_hackaTUM_GameOfStonks_services_stonks.Match>|null;
+	UserOrders:Array<github_com_hackaTUM_GameOfStonks_services_stonks.Order>|null;
 	Orders:Array<github_com_hackaTUM_GameOfStonks_services_stonks.Order>|null;
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.StonkName

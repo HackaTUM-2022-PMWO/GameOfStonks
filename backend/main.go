@@ -61,12 +61,12 @@ func main() {
 	matchCol := mongoClient.Database("stonks").Collection("match")
 	matchP := store.NewMemoryMatchPersistor(matchCol, l)
 
-	// TODO: initialize the matcher
-	// TODO: close the matcher (matcher.Close())
-	match := matcher.NewMatcher(l, ctx, stonkNames, orderP, matchP)
+	// initialize the matcher
+	matchUpdateCh := make(chan []*store.Match, 100)
+	match := matcher.NewMatcher(l, ctx, stonkNames, time.Millisecond*2000, orderP, matchP, matchUpdateCh)
 	defer match.Close()
 
-	service := stonks.NewStonksService(l, initialStonkPrices, startMoney, orderP, matchP)
+	service := stonks.NewStonksService(l, initialStonkPrices, startMoney, orderP, matchP, matchUpdateCh)
 
 	server := &http.Server{
 		Addr:     "0.0.0.0:9999",
