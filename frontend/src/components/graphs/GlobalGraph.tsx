@@ -1,4 +1,4 @@
-import { Line, LineChart, Tooltip } from "recharts";
+import { BarChart, Line, LineChart, Tooltip } from "recharts";
 import { useStonkState } from "../../model/store";
 import { User } from "../../services/vo-stonks";
 import { PlayerListItem } from "../listItems/PlayerListItem";
@@ -74,9 +74,4 @@ export const GlobalGraph = (props: GraphProps) => {
       </ul>
     </>
   );
-};
-
-const colorForPlayer = (users: User[]) => {
-  // TODO: add mapping bitween user ids and colors
-  return "#D043AC";
 };
