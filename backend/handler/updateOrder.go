@@ -11,12 +11,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type CreateOrderCmd struct {
+type UpdateOrderCmd struct {
 	// TODO: Actually the ID should be set by the server
 	Order store.Order `yaml:"order"`
 }
 
-func CreateOrderHandler(
+func UpdateOrderHandler(
 	l *zap.Logger,
 	store store.OrderPersistor,
 ) http.HandlerFunc {

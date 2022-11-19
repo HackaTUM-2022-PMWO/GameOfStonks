@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"html"
 	"log"
 	"net/http"
 
+	"github.com/hackaTUM/GameOfStonks/handler"
 	"go.uber.org/zap"
 )
 
@@ -15,16 +14,14 @@ func main() {
 		panic(err)
 	}
 
-	// TODO: Initialize the storage
+	// getorder
+	// addOrder
+	// removeOrder
+	// updateOrder
+	//
 
-	http.HandleFunc("/", CreateOrderHandler() func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-	})
-
-	http.HandleFunc("/hi", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hi")
-	})
+	http.HandleFunc("/createOrder", handler.CreateOrderHandler(l, mongostore))
+	http.HandleFunc("/updateOrder", handler.UpdateOrderHandler(l, mongostore))
 
 	log.Fatal(http.ListenAndServe(":8081", nil))
-
 }
