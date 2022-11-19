@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -44,7 +45,9 @@ func (p *MemoryMatchPersistor) GetMatches(ctx context.Context, stonk Stonk, user
 	}
 
 	cur, err := p.col.Find(ctx, filter)
-	if err != nil {
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return []*Match{}, nil
+	} else if err != nil {
 		p.l.Error("Unable to find matches", zap.Error(err))
 	}
 
