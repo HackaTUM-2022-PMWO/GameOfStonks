@@ -7,12 +7,16 @@ export class StonksServiceClient {
 	constructor(
 		public transport:<T>(method: string, data?: any[]) => Promise<T>
 	) {}
-	async getStonkInfo(stonk:string):Promise<{ret:github_com_hackaTUM_GameOfStonks_services_stonks.StonkInfo; ret_1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
+	async getStonkInfo(stonk:github_com_hackaTUM_GameOfStonks_services_stonks.StonkName):Promise<{ret:github_com_hackaTUM_GameOfStonks_services_stonks.StonkInfo; ret_1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
 		const response = await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.StonkInfo; 1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("GetStonkInfo", [stonk])
 		return {ret : response[0], ret_1 : response[1]};
 	}
-	async newUser(name:string):Promise<github_com_hackaTUM_GameOfStonks_services_stonks.Err|null> {
-		return (await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("NewUser", [name]))[0]
+	async newUser(name:string):Promise<{ret:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User>|null; ret_1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
+		const response = await this.transport<{0:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User>|null; 1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("NewUser", [name])
+		return {ret : response[0], ret_1 : response[1]};
+	}
+	async placeOrder(cmd:github_com_hackaTUM_GameOfStonks_services_stonks.PlaceOrderCmd):Promise<github_com_hackaTUM_GameOfStonks_services_stonks.Err|null> {
+		return (await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("PlaceOrder", [cmd]))[0]
 	}
 	async startSession(id:string):Promise<{ret:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User>|null; ret_1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
 		const response = await this.transport<{0:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User>|null; 1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("StartSession", [id])

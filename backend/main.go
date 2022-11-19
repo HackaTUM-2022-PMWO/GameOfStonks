@@ -18,12 +18,12 @@ import (
 )
 
 var (
-	initialStonkPrices = map[string]float64{
-		"paper_clip": 0.5,
-		"scissors":   8.64,
-		"pencil":     1.3,
-		"house":      1350000.0,
-		"mate":       1.8,
+	initialStonkPrices = map[stonks.StonkName]float64{
+		stonks.StonkPaperClip: 0.5,
+		stonks.StonkScissors:  8.64,
+		stonks.StonkPencil:    1.3,
+		stonks.StonkHouse:     1350000.0,
+		stonks.StonkMate:      1.8,
 	}
 
 	startMoney float64 = 1000.0
@@ -33,7 +33,7 @@ func main() {
 	// generate the stonk names
 	stonkNames := make([]string, 0, len(initialStonkPrices))
 	for v := range initialStonkPrices {
-		stonkNames = append(stonkNames, v)
+		stonkNames = append(stonkNames, string(v))
 	}
 
 	l, err := zap.NewDevelopment()
@@ -63,7 +63,7 @@ func main() {
 	// TODO: initialize the matcher
 	// TODO: close the matcher (matcher.Close())
 
-	service := stonks.NewStonksService(l, stonkNames, initialStonkPrices, startMoney, orderP, matchP)
+	service := stonks.NewStonksService(l, initialStonkPrices, startMoney, orderP, matchP)
 
 	server := &http.Server{
 		Addr:     "0.0.0.0:9999",

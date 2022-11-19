@@ -6,6 +6,22 @@ import (
 	"github.com/hackaTUM/GameOfStonks/store"
 )
 
+// to store types
+
+func orderTypeToStore(t OrderType) store.OrderType {
+	switch t {
+	case OrderTypeBuy:
+		return store.OrderTypeBuy
+	case OrderTypeSell:
+		return store.OrderTypeSell
+	default:
+		// TODO: do not panic
+		panic(fmt.Sprintf("invalid order type: %s", t))
+	}
+}
+
+// to front-end vo
+
 func orderTypeToStonksVo(t store.OrderType) OrderType {
 	switch t {
 	case store.OrderTypeBuy:

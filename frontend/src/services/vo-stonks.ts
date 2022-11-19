@@ -26,12 +26,28 @@ export interface Order {
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.OrderType
 export type OrderType = string
+// github.com/hackaTUM/GameOfStonks/services/stonks.PlaceOrderCmd
+export interface PlaceOrderCmd {
+	Stonk:github_com_hackaTUM_GameOfStonks_services_stonks.StonkName;
+	Quantity:number;
+	Price:number;
+	OrderType:github_com_hackaTUM_GameOfStonks_services_stonks.OrderType;
+}
 // github.com/hackaTUM/GameOfStonks/services/stonks.StonkInfo
 export interface StonkInfo {
 	ID:string;
 	TimeSeries:Array<github_com_hackaTUM_GameOfStonks_services_stonks.DataPoint>|null;
 	MatchHistory:Array<github_com_hackaTUM_GameOfStonks_services_stonks.Match>|null;
 	Orders:Array<github_com_hackaTUM_GameOfStonks_services_stonks.Order>|null;
+}
+// github.com/hackaTUM/GameOfStonks/services/stonks.StonkName
+export enum StonkName {
+	StonkHouse = "house",
+	StonkMate = "mate",
+	StonkPaperClip = "paperClip",
+	StonkPencil = "pencil",
+	StonkScissors = "scissors",
+	StonkEmpty = "",
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.User
 export interface User {

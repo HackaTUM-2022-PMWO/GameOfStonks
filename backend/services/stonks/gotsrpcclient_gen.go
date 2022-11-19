@@ -11,8 +11,9 @@ import (
 )
 
 type StonksServiceGoTSRPCClient interface {
-	GetStonkInfo(ctx go_context.Context, stonk string) (retGetStonkInfo_0 StonkInfo, retGetStonkInfo_1 *Err, clientErr error)
-	NewUser(ctx go_context.Context, name string) (retNewUser_0 *Err, clientErr error)
+	GetStonkInfo(ctx go_context.Context, stonk StonkName) (retGetStonkInfo_0 StonkInfo, retGetStonkInfo_1 *Err, clientErr error)
+	NewUser(ctx go_context.Context, name string) (retNewUser_0 []User, retNewUser_1 *Err, clientErr error)
+	PlaceOrder(ctx go_context.Context, cmd PlaceOrderCmd) (retPlaceOrder_0 *Err, clientErr error)
 	StartSession(ctx go_context.Context, id string) (retStartSession_0 []User, retStartSession_1 *Err, clientErr error)
 }
 
@@ -37,7 +38,7 @@ func NewStonksServiceGoTSRPCClientWithClient(url string, endpoint string, client
 		Client:   gotsrpc.NewClientWithHttpClient(client),
 	}
 }
-func (tsc *HTTPStonksServiceGoTSRPCClient) GetStonkInfo(ctx go_context.Context, stonk string) (retGetStonkInfo_0 StonkInfo, retGetStonkInfo_1 *Err, clientErr error) {
+func (tsc *HTTPStonksServiceGoTSRPCClient) GetStonkInfo(ctx go_context.Context, stonk StonkName) (retGetStonkInfo_0 StonkInfo, retGetStonkInfo_1 *Err, clientErr error) {
 	args := []interface{}{stonk}
 	reply := []interface{}{&retGetStonkInfo_0, &retGetStonkInfo_1}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "GetStonkInfo", args, reply)
@@ -47,12 +48,22 @@ func (tsc *HTTPStonksServiceGoTSRPCClient) GetStonkInfo(ctx go_context.Context, 
 	return
 }
 
-func (tsc *HTTPStonksServiceGoTSRPCClient) NewUser(ctx go_context.Context, name string) (retNewUser_0 *Err, clientErr error) {
+func (tsc *HTTPStonksServiceGoTSRPCClient) NewUser(ctx go_context.Context, name string) (retNewUser_0 []User, retNewUser_1 *Err, clientErr error) {
 	args := []interface{}{name}
-	reply := []interface{}{&retNewUser_0}
+	reply := []interface{}{&retNewUser_0, &retNewUser_1}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "NewUser", args, reply)
 	if clientErr != nil {
 		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy NewUser")
+	}
+	return
+}
+
+func (tsc *HTTPStonksServiceGoTSRPCClient) PlaceOrder(ctx go_context.Context, cmd PlaceOrderCmd) (retPlaceOrder_0 *Err, clientErr error) {
+	args := []interface{}{cmd}
+	reply := []interface{}{&retPlaceOrder_0}
+	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "PlaceOrder", args, reply)
+	if clientErr != nil {
+		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy PlaceOrder")
 	}
 	return
 }
