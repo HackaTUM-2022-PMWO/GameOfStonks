@@ -17,8 +17,12 @@ func (se *ScalarError) Error() string {
 type ScalarInPlace string
 
 type Stonks struct {
+	// TODO: Implement all the functions
 	Bla bool
 }
+
+// func (d *Stonks) GetStonk(id string) (string, *Err) {
+// }
 
 func (d *Stonks) Hello(name string) (string, *Err) {
 	if name == "Peter" {

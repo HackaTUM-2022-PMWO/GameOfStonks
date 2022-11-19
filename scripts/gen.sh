@@ -1,3 +1,3 @@
 # !/bin/bash
 
-gotsrpc ./backend/ıgotsrpc.yaml
+gotsrpc ./backend/gotsrpc.yaml
