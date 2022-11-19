@@ -17,4 +17,5 @@ type Match struct {
 	SellOrder Order     `bson:"sellOrder"`
 	BuyOrder  Order     `bson:"buyOrder"`
 	Time      time.Time `bson:"time"`
+	Quantity  int		`bson:"quantity"`
 }
