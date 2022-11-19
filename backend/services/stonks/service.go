@@ -83,7 +83,6 @@ type User struct {
 	Stonks         map[StonkName]int
 	ReservedStonks map[StonkName]int
 
-	// FIXME: The networth actually needs to be initialized if we also give the user stonks to begin with!
 	NetWorth           float64
 	NetWorthTimeSeries DataPoints
 }
@@ -149,8 +148,21 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 		Money: s.startMoney,
 	}
 
+	// set the number of starting stocks
 	for s, i := range s.startStonks {
 		u.Stonks[s] = i
+	}
+
+	// initialize the networth
+	u.NetWorth = u.Money
+	for stonk, num := range u.Stonks {
+		u.NetWorth += float64(num) * s.prices[stonk].LatestValue()
+	}
+
+	// update the latest NetWorthTimeSeries-DataPoints
+	u.NetWorthTimeSeries[0] = DataPoint{
+		Time:  0,
+		Value: u.NetWorth,
 	}
 
 	s.waitingUsers[u.id] = u
