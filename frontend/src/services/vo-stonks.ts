@@ -50,9 +50,16 @@ export enum StonkName {
 	StonkScissors = "scissors",
 	StonkEmpty = "",
 }
+// github.com/hackaTUM/GameOfStonks/services/stonks.UpdateOrderCmd
+export interface UpdateOrderCmd {
+	Id:string;
+	Quantity:number;
+	Price:number;
+}
 // github.com/hackaTUM/GameOfStonks/services/stonks.User
 export interface User {
 	Name:string;
 	Money:number;
+	ReservedMoney:number;
 }
 // end of common js

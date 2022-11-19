@@ -73,8 +73,8 @@ type User struct {
 	// TODO: Probably need to add the ID without leaking it to other users (impersenation!)
 	Name string
 
-	// TODO: Deduct the money once an order is placed not when it is executed!
-	Money float64
+	Money         float64
+	ReservedMoney float64
 
 	// TODO: Need to create a users NetWorth (i.e. money current values of stonks)
 }
@@ -113,6 +113,12 @@ type PlaceOrderCmd struct {
 	Quantity  int
 	Price     float64
 	OrderType OrderType
+}
+
+type UpdateOrderCmd struct {
+	Id       string
+	Quantity int
+	Price    float64
 }
 
 func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name string) ([]User, *Err) {
@@ -291,9 +297,24 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 		return &Err{"invalid stonk"}
 	}
 
-	// make sure the price is not negative
-	if cmd.Price < 0. {
-		return &Err{"negative price"}
+	// make sure the price is not non-positive
+	if cmd.Price <= 0. {
+		s.l.Error("order creation with non-positive price",
+			zap.String("user_id", userId),
+			zap.Int("quantity", cmd.Quantity),
+			zap.Float64("price", cmd.Price),
+		)
+		return &Err{"non-positive price"}
+	}
+
+	// make sure the price is not non-positive
+	if cmd.Quantity <= 0 {
+		s.l.Error("order creation with non-positive quantity",
+			zap.String("user_id", userId),
+			zap.Int("quantity", cmd.Quantity),
+			zap.Float64("price", cmd.Price),
+		)
+		return &Err{"non-positive quantity"}
 	}
 
 	user, ok := s.activeUsers[userId]
@@ -301,7 +322,8 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 		s.l.Error("user is not an active user", zap.String("user_id", userId))
 		return &Err{"user is not an active user"}
 	}
-	if user.Money < (cmd.Price * float64(cmd.Quantity)) {
+	totalPrice := (cmd.Price * float64(cmd.Quantity))
+	if (user.Money - user.ReservedMoney) < totalPrice {
 		s.l.Error("user has insufficient funds",
 			zap.String("stonk", string(cmd.Stonk)),
 			zap.Float64("price", cmd.Price),
@@ -332,88 +354,135 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 		return &Err{"unable to insert order"}
 	}
 
+	// increase the reserved money of the user
+	user.ReservedMoney = user.ReservedMoney + totalPrice
+	s.activeUsers[userId] = user
+
 	return nil
 }
 
-type UpdateOrderCmd struct {
-	Id       string
-	Quantity int
-	Price    float64
+// NOTE: Update order with a quantity of 0 deletes the order
+func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd UpdateOrderCmd) *Err {
+	if r.Method != http.MethodPost {
+		return &Err{"you gotta post wlad"}
+	}
+
+	// make sure the id is not empty
+	if cmd.Id == "" {
+		s.l.Error("empty orderId")
+		return &Err{"empty orderId"}
+	}
+
+	// verify the user
+	exists, userId, err := userExists(r, s.activeUsers)
+	if err != nil {
+		s.l.Error("unable to read user cookie", zap.Error(err))
+		return &Err{"unable to read user cookie"}
+	} else if !exists {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return &Err{"user is not an active user"}
+	}
+
+	// make sure the price is not non-positive
+	if cmd.Price <= 0. {
+		s.l.Error("order update with non-positive price",
+			zap.String("user_id", userId),
+			zap.String("order_id", cmd.Id),
+			zap.Int("quantity", cmd.Quantity),
+			zap.Float64("price", cmd.Price),
+		)
+		return &Err{"non-positive price"}
+	}
+
+	// make sure the price is not negative
+	if cmd.Quantity < 0 {
+		s.l.Error("order update with negative quantity",
+			zap.String("user_id", userId),
+			zap.String("order_id", cmd.Id),
+			zap.Int("quantity", cmd.Quantity),
+			zap.Float64("price", cmd.Price),
+		)
+		return &Err{"negative quantity"}
+	}
+
+	user, ok := s.activeUsers[userId]
+	if !ok {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return &Err{"user is not an active user"}
+	}
+
+	// Get the order
+	order, err := s.orderP.GetOrder(r.Context(), cmd.Id)
+	if err != nil {
+		s.l.Error("unable to get previous order",
+			zap.String("order_id", cmd.Id),
+			zap.Error(err),
+		)
+		return &Err{"unable to get previous order"}
+	}
+
+	// if the quantity is set to 0 we are actually deleting the order
+	if cmd.Quantity == 0 {
+		s.l.Info("deleting order", zap.String("order_id", cmd.Id))
+
+		err := s.orderP.DeleteOrder(r.Context(), cmd.Id)
+		if err != nil {
+			s.l.Error("unable to delete order",
+				zap.String("order_id", cmd.Id),
+				zap.Error(err),
+			)
+			return &Err{"unable to delete order"}
+		}
+
+		// increase the reserved money of the user
+		previousTotal := order.Price * float64(order.Quantity)
+		user.ReservedMoney = user.ReservedMoney - previousTotal
+		s.activeUsers[userId] = user
+
+		return nil
+	} else {
+		// make sure the user has sufficient fund and update the total reserved money
+		previousTotal := order.Price * float64(order.Quantity)
+		newTotalPrice := cmd.Price * float64(cmd.Quantity)
+		if (user.Money - user.ReservedMoney + previousTotal) < newTotalPrice {
+			s.l.Error("user has insufficient funds",
+				zap.Float64("price", cmd.Price),
+				zap.Int("quantity", cmd.Quantity),
+				zap.Error(err),
+			)
+			return &Err{"user has insufficient funds"} // TODO: Create separate error
+		}
+
+		// update the previous order object
+		newOrder := store.Order{
+			Id:       order.Id,
+			Stonk:    order.Stonk,
+			Quantity: cmd.Quantity,
+			Price:    cmd.Price,
+			Type:     order.Type,
+			User:     order.User,
+			Time:     time.Now(),
+		}
+
+		// insert the order
+		err = s.orderP.UpdateOrder(r.Context(), newOrder)
+		if err != nil {
+			s.l.Error("unable to update order",
+				zap.String("order_id", cmd.Id),
+				zap.Error(err),
+			)
+			return &Err{"unable to update order"}
+		}
+
+		// increase the reserved money of the user
+		user.ReservedMoney = user.ReservedMoney - previousTotal + newTotalPrice
+		s.activeUsers[userId] = user
+
+		return nil
+	}
 }
 
-// FIXME: Implement
-// NOTE: Update order with a quantity of 0 deletes the order
-// func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd UpdateOrderCmd) *Err {
-// 	if r.Method != http.MethodPost {
-// 		return &Err{"you gotta post wlad"}
-// 	}
-
-// 	// verify the user
-// 	exists, userId, err := userExists(r, s.activeUsers)
-// 	if err != nil {
-// 		s.l.Error("unable to read user cookie", zap.Error(err))
-// 		return &Err{"unable to read user cookie"}
-// 	} else if !exists {
-// 		s.l.Error("user is not an active user", zap.String("user_id", userId))
-// 		return &Err{"user is not an active user"}
-// 	}
-
-// 	// Make sure the stonk exists
-// 	if !cmd.Stonk.IsValid() {
-// 		s.l.Error("user is not an active user",
-// 			zap.String("user_id", userId),
-// 			zap.Float64("price", cmd.Price),
-// 		)
-// 		return &Err{"invalid stonk"}
-// 	}
-
-// 	// make sure the price is not negative
-// 	if cmd.Price < 0. {
-// 		return &Err{"negative price"}
-// 	}
-
-// 	user, ok := s.activeUsers[userId]
-// 	if !ok {
-// 		s.l.Error("user is not an active user", zap.String("user_id", userId))
-// 		return &Err{"user is not an active user"}
-// 	}
-// 	if user.Money < (cmd.Price * float64(cmd.Quantity)) {
-// 		s.l.Error("user has insufficient funds",
-// 			zap.String("stonk", string(cmd.Stonk)),
-// 			zap.Float64("price", cmd.Price),
-// 			zap.Int("quantity", cmd.Quantity),
-// 			zap.Error(err),
-// 		)
-// 		return &Err{"user has insufficient funds"} // TODO: Create separate error
-// 	}
-
-// 	// create a store order object
-// 	order := store.Order{
-// 		Id:       uuid.New().String(),
-// 		Stonk:    string(cmd.Stonk),
-// 		Quantity: cmd.Quantity,
-// 		Price:    cmd.Price,
-// 		Type:     orderTypeToStore(cmd.OrderType),
-// 		User: store.User{
-// 			ID:   user.id,
-// 			Name: user.Name,
-// 		},
-// 		Time: time.Now(),
-// 	}
-
-// 	// insert the order
-// 	err = s.orderP.InsertOrder(r.Context(), order)
-// 	if err != nil {
-// 		s.l.Error("unable to insert order", zap.Error(err))
-// 		return &Err{"unable to insert order"}
-// 	}
-
-// 	return nil
-// }
-
 // TODO: Add functions for:
-// - UpdateOrder
-// - DeleteOrder
 // - GetUserInfo (users current portfolie + others)
 
 // TODO: Add SSE for:

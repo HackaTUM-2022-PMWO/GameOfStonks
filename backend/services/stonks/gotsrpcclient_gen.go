@@ -15,6 +15,7 @@ type StonksServiceGoTSRPCClient interface {
 	NewUser(ctx go_context.Context, name string) (retNewUser_0 []User, retNewUser_1 *Err, clientErr error)
 	PlaceOrder(ctx go_context.Context, cmd PlaceOrderCmd) (retPlaceOrder_0 *Err, clientErr error)
 	StartSession(ctx go_context.Context, id string) (retStartSession_0 []User, retStartSession_1 *Err, clientErr error)
+	UpdateOrder(ctx go_context.Context, cmd UpdateOrderCmd) (retUpdateOrder_0 *Err, clientErr error)
 }
 
 type HTTPStonksServiceGoTSRPCClient struct {
@@ -74,6 +75,16 @@ func (tsc *HTTPStonksServiceGoTSRPCClient) StartSession(ctx go_context.Context, 
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "StartSession", args, reply)
 	if clientErr != nil {
 		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy StartSession")
+	}
+	return
+}
+
+func (tsc *HTTPStonksServiceGoTSRPCClient) UpdateOrder(ctx go_context.Context, cmd UpdateOrderCmd) (retUpdateOrder_0 *Err, clientErr error) {
+	args := []interface{}{cmd}
+	reply := []interface{}{&retUpdateOrder_0}
+	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "UpdateOrder", args, reply)
+	if clientErr != nil {
+		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy UpdateOrder")
 	}
 	return
 }

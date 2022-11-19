@@ -115,7 +115,7 @@ func (m *Matcher) Start() {
 
 						if qty > 0 {
 							// delete buy order if fulfilled
-							m.orderP.DeleteOrder(m.ctx, *buyOrder)
+							m.orderP.DeleteOrder(m.ctx, buyOrder.Id)
 						} else if qty < 0 {
 							// keep buy order if not fulfilled completely & delete sell order
 							m.orderP.UpdateOrder(m.ctx, store.Order{
@@ -127,10 +127,10 @@ func (m *Matcher) Start() {
 								User:     buyOrder.User,
 								Time:     buyOrder.Time,
 							})
-							m.orderP.DeleteOrder(m.ctx, *sellOrder)
+							m.orderP.DeleteOrder(m.ctx, sellOrder.Id)
 						} else if qty == 0 {
-							m.orderP.DeleteOrder(m.ctx, *buyOrder)
-							m.orderP.DeleteOrder(m.ctx, *sellOrder)
+							m.orderP.DeleteOrder(m.ctx, buyOrder.Id)
+							m.orderP.DeleteOrder(m.ctx, sellOrder.Id)
 						}
 
 					}

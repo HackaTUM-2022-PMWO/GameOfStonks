@@ -6,10 +6,11 @@ import (
 )
 
 type OrderPersistor interface {
+	GetOrder(ctx context.Context, id string) (*Order, error)
 	GetOrders(ctx context.Context, stonk string, user *User) ([]*Order, error)
 	InsertOrder(ctx context.Context, order Order) error
 	UpdateOrder(ctx context.Context, order Order) error
-	DeleteOrder(ctx context.Context, order Order) error
+	DeleteOrder(ctx context.Context, id string) error
 }
 
 type Order struct {

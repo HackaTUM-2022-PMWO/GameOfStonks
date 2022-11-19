@@ -22,6 +22,22 @@ func NewMemoryOrderPersistor(col *mongo.Collection, l *zap.Logger) *MemoryOrderP
 	}
 }
 
+func (p *MemoryOrderPersistor) GetOrder(ctx context.Context, id string) (*Order, error) {
+	// Returns the order matchin the id
+	var result Order
+
+	filter := bson.D{{Key: "id", Value: id}}
+	res := p.col.FindOne(ctx, filter)
+	if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+		return nil, nil
+	} else if res.Err() != nil {
+		p.l.Error("unable to get orders", zap.Error(res.Err()))
+		return nil, fmt.Errorf("unable to get orders: %s", res.Err())
+	}
+	err := res.Decode(&result)
+	return &result, err
+}
+
 func (p *MemoryOrderPersistor) GetOrders(ctx context.Context, stonk string, user *User) ([]*Order, error) {
 	// Returns all current orders
 	var orders []*Order
@@ -83,12 +99,12 @@ func (p *MemoryOrderPersistor) UpdateOrder(ctx context.Context, order Order) err
 	return err
 }
 
-func (p *MemoryOrderPersistor) DeleteOrder(ctx context.Context, order Order) error {
-	filter := bson.D{{Key: "id", Value: order.Id}}
+func (p *MemoryOrderPersistor) DeleteOrder(ctx context.Context, id string) error {
+	filter := bson.D{{Key: "id", Value: id}}
 
 	_, err := p.col.DeleteMany(ctx, filter)
 	if err != nil {
-		p.l.Error("unable to update order", zap.Error(err))
+		p.l.Error("unable to delete order", zap.Error(err))
 	}
 	// fmt.Printf("Deleted %v documents in the trainers collection\n", deleteResult.DeletedCount)
 	return err
