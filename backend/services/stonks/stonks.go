@@ -29,6 +29,12 @@ type ScalarInPlace string
 type StonksService struct {
 	l *zap.Logger
 
+	// all the names of valid stonks
+	stonks []string
+
+	// Time series data for all the stonks
+	prices Prices
+
 	orderP store.OrderPersistor
 	matchP store.MatchPersistor
 
@@ -39,11 +45,15 @@ type StonksService struct {
 
 func NewStonksService(
 	l *zap.Logger,
+	stonks []string,
+	initialStonkPrices map[string]float64,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
 ) *StonksService {
 	return &StonksService{
-		l:            l,
+		l:            l.With(zap.String("component", "service")),
+		stonks:       stonks,
+		prices:       NewPrices(initialStonkPrices),
 		orderP:       orderP,
 		matchP:       matchP,
 		waitingUsers: make([]User, 0, 5),
@@ -62,7 +72,6 @@ type User struct {
 
 type StonkInfo struct {
 	ID string
-
 	// TODO: Add the graph data
 	// History map[]
 	// TODO: Sort by timestamps!
@@ -138,10 +147,15 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 		return StonkInfo{}, &Err{"you have to get"}
 	}
 
+	// make sure the stonk is valid
+	if !stonkIsValid(stonk, s.stonks) {
+		return StonkInfo{}, &Err{"invalid stonk name"}
+	}
+
 	// FIXME: Somehow verify the user
 
-	// TODO: Get the data from the collections
-	storeOrders, err := s.orderP.GetOrders(r.Context(), store.Stonk(stonk), nil)
+	// Get the data from the collections
+	storeOrders, err := s.orderP.GetOrders(r.Context(), stonk, nil)
 	if err != nil {
 		return StonkInfo{}, &Err{"unable to retrieve orders"}
 	}
@@ -149,7 +163,7 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	// transform the orders
 	orders := ordersToStonksVo(storeOrders)
 
-	storeMatches, err := s.matchP.GetMatches(r.Context(), store.Stonk(stonk), nil)
+	storeMatches, err := s.matchP.GetMatches(r.Context(), stonk, nil)
 	if err != nil {
 		return StonkInfo{}, &Err{"unable to retrieve orders"}
 	}
@@ -164,4 +178,50 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 		Orders:       orders,
 		MatchHistory: matches,
 	}, nil
+}
+
+// func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, stonk string) (StonkInfo, *Err) {
+// 	if r.Method != http.MethodGet {
+// 		return StonkInfo{}, &Err{"you have to get"}
+// 	}
+
+// 	// FIXME: Somehow verify the user
+
+// 	// TODO: Get the data from the collections
+// 	storeOrders, err := s.orderP.GetOrders(r.Context(), store.Stonk(stonk), nil)
+// 	if err != nil {
+// 		return StonkInfo{}, &Err{"unable to retrieve orders"}
+// 	}
+
+// 	// transform the orders
+// 	orders := ordersToStonksVo(storeOrders)
+
+// 	storeMatches, err := s.matchP.GetMatches(r.Context(), store.Stonk(stonk), nil)
+// 	if err != nil {
+// 		return StonkInfo{}, &Err{"unable to retrieve orders"}
+// 	}
+
+// 	// transform the orders
+// 	matches := matchsToStonksVo(storeMatches)
+
+// 	// TODO: Transform the data
+// 	// TODO: return the shit
+
+// 	return StonkInfo{
+// 		Orders:       orders,
+// 		MatchHistory: matches,
+// 	}, nil
+// }
+
+//---------------------------------------------------------------------------
+// ~ utils
+//---------------------------------------------------------------------------
+
+func stonkIsValid(stonk string, stonks []string) bool {
+	for _, s := range stonks {
+		if stonk == s {
+			return true
+		}
+	}
+	return false
 }

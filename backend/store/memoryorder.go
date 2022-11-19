@@ -22,7 +22,7 @@ func NewMemoryOrderPersistor(col *mongo.Collection, l *zap.Logger) *MemoryOrderP
 	}
 }
 
-func (p *MemoryOrderPersistor) GetOrders(ctx context.Context, stonk Stonk, user *User) ([]*Order, error) {
+func (p *MemoryOrderPersistor) GetOrders(ctx context.Context, stonk string, user *User) ([]*Order, error) {
 	// Returns all current orders
 	var orders []*Order
 

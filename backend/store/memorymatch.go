@@ -32,7 +32,7 @@ func (p *MemoryMatchPersistor) AddMatch(ctx context.Context, match *Match) error
 	return err
 }
 
-func (p *MemoryMatchPersistor) GetMatches(ctx context.Context, stonk Stonk, user *User) ([]*Match, error) {
+func (p *MemoryMatchPersistor) GetMatches(ctx context.Context, stonk string, user *User) ([]*Match, error) {
 	// Returns the history of all matches
 	var allMatches []*Match
 
