@@ -1,14 +1,16 @@
-import { Outlet } from "react-router-dom";
-import { useStonkState } from "./model/store";
+import {Outlet} from "react-router-dom";
+import {useStonkState} from "./model/store";
+import {Header} from "./components/header/Header";
 
 function App() {
-  const state = useStonkState();
+    const state = useStonkState();
 
-  return (
-    <div>
-      <Outlet />
-    </div>
-  );
+    return (
+        <div>
+            <Header/>
+            <Outlet/>
+        </div>
+    );
 }
 
 export default App;

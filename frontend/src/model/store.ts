@@ -19,8 +19,6 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
   (set, get) => {
     const client = getClient(StonksServiceClient);
 
-    client.hello("test").then((resp) => console.log(resp));
-
     const withLoading = <T>(promise: Promise<T>) => {
       set({ loading: true });
       promise.finally(() => set({ loading: false }));
