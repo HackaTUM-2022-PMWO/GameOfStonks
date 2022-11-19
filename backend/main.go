@@ -17,13 +17,17 @@ import (
 	"go.uber.org/zap"
 )
 
-var initialStonkPrices = map[string]float64{
-	"paper_clip": 0.5,
-	"scissors":   8.64,
-	"pencil":     1.3,
-	"house":      1350000.0,
-	"mate":       1.8,
-}
+var (
+	initialStonkPrices = map[string]float64{
+		"paper_clip": 0.5,
+		"scissors":   8.64,
+		"pencil":     1.3,
+		"house":      1350000.0,
+		"mate":       1.8,
+	}
+
+	startMoney float64 = 1000.0
+)
 
 func main() {
 	// generate the stonk names
@@ -59,7 +63,7 @@ func main() {
 	// TODO: initialize the matcher
 	// TODO: close the matcher (matcher.Close())
 
-	service := stonks.NewStonksService(l, stonkNames, initialStonkPrices, orderP, matchP)
+	service := stonks.NewStonksService(l, stonkNames, initialStonkPrices, startMoney, orderP, matchP)
 
 	server := &http.Server{
 		Addr:     "0.0.0.0:9999",
