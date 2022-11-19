@@ -11,4 +11,4 @@ export const vanillaStore = vanillaCreate((set, get) => {
   return {};
 });
 
-export const useMainStore = create(vanillaStore);
+export const useStonkState = create(vanillaStore);
