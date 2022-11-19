@@ -1,0 +1,18 @@
+module:
+  name: github.com/hackaTUM/GameOfStonks
+  path: ./
+
+modulekind: commonjs
+tsclientflavor: async
+targets:
+  stonks:
+    services:
+      /service/stonks: StonksService
+    package: github.com/hackaTUM/GameOfStonks/services/stonks
+    out: ../frontend/src/services/client.ts
+    tsrpc:
+      - StonksService
+
+mappings:
+  github.com/hackaTUM/GameOfStonks/services/stonks:
+    out: ../frontend/src/services/stonks.ts
