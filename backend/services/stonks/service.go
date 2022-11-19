@@ -177,6 +177,12 @@ func (s *StonksService) GetUserInfo(w http.ResponseWriter, r *http.Request) (*Us
 		return nil, nil, &Err{"user is not an active user"}
 	}
 
+	user, ok := s.activeUsers[userId]
+	if !ok {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return nil, nil, &Err{"user is not an active user"}
+	}
+
 	otherUsers := make([]*User, 0, len(s.activeUsers)-1)
 	for _, u := range s.waitingUsers {
 		if u.id != userId {
@@ -188,7 +194,7 @@ func (s *StonksService) GetUserInfo(w http.ResponseWriter, r *http.Request) (*Us
 	sort.Slice(otherUsers, func(i, j int) bool {
 		return otherUsers[i].Name < otherUsers[j].Name
 	})
-	return s.activeUsers[userId], otherUsers, nil
+	return user, otherUsers, nil
 }
 
 // TODO: Actually this should be an SSE
