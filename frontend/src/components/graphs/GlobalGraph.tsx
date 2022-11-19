@@ -65,7 +65,11 @@ export const GlobalGraph = (props: GraphProps) => {
       </LineChart>
       <ul className="flex">
         {users?.map((user, index) => (
-          <PlayerListItem key={user.Name + index} value={user.Name} />
+          <PlayerListItem
+            idx={index}
+            key={user.Name + index}
+            value={user.Name}
+          />
         ))}
       </ul>
     </>
