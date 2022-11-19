@@ -11,6 +11,7 @@ import (
 
 	"net/http"
 
+	"github.com/hackaTUM/GameOfStonks/matcher"
 	"github.com/hackaTUM/GameOfStonks/services/stonks"
 	"github.com/hackaTUM/GameOfStonks/store"
 
@@ -62,6 +63,8 @@ func main() {
 
 	// TODO: initialize the matcher
 	// TODO: close the matcher (matcher.Close())
+	match := matcher.NewMatcher(l, ctx, stonkNames, orderP, matchP)
+	defer match.Close()
 
 	service := stonks.NewStonksService(l, initialStonkPrices, startMoney, orderP, matchP)
 
