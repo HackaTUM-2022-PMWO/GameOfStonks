@@ -9,10 +9,10 @@ targets:
     services:
       /service/stonks: StonksService
     package: github.com/hackaTUM/GameOfStonks/services/stonks
-    out: ../frontend/src/services/client.ts
+    out: ./frontend/src/services/stonk-client.ts
     tsrpc:
       - StonksService
 
 mappings:
   github.com/hackaTUM/GameOfStonks/services/stonks:
-    out: ../frontend/src/services/stonks.ts
+    out: ./frontend/src/services/vo-stonks.ts
