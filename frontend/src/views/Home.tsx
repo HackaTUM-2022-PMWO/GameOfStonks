@@ -22,9 +22,11 @@ function Home() {
           +200
           <Currency />
         </h2>
-        {/* <ResponsiveContainer width="100%" height="100%"> */}
-        <GlobalGraph />
-        {/* </ResponsiveContainer> */}
+        <div className="max-w max-h">
+          <ResponsiveContainer width="100%" height="100%">
+            <GlobalGraph />
+          </ResponsiveContainer>
+        </div>
       </Card>
       <Card>
         <StonkPositionList stonks={[]} />
