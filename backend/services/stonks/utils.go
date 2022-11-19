@@ -31,13 +31,25 @@ func (s *StonksService) update() error {
 
 				// update the users stock position
 				for userId, user := range s.activeUsers {
-					// FIXME: update the users stock position
+					if userId == match.BuyOrder.User.ID {				// if buyer
+						user.Stonks[stonkName] += match.Quantity
+						user.ReservedStonks[stonkName] -= match.Quantity
+						user.ReservedMoney += float64(match.Quantity) * s.prices[stonkName].LatestValue()
+					} else if userId != match.SellOrder.User.ID {		// elif seller
+						user.Stonks[stonkName] -= 1
+					} else {
+						continue
+					}
 
 					// since the stock prices might have been adjusted, we also have to re-evaluate the users net worth
-					// FIXME: Adapt user's NetWorth (Money-ReservedMoney + Stonks_Quantity*Stonk_LastPrice)
+					user.NetWorth = user.Money
+					for stonk, num := range user.Stonks {
+						user.NetWorth += float64(num) * s.prices[stonk].LatestValue()
+					}
 
-					// update the datapoints
-					// FIXME: update the users NetWorthTimeSeries-DataPoints
+					// update the NetWorthTimeSeries-DataPoints
+					nextD := DataPoint{s.prices[stonkName].LatestTime(), user.NetWorth}
+					user.NetWorthTimeSeries = append(user.NetWorthTimeSeries, nextD)
 
 					s.activeUsers[userId] = user
 				}
