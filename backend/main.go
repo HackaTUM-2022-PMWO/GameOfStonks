@@ -24,7 +24,7 @@ func main() {
 	}
 
 	server := &http.Server{
-		Addr:     "stonks",
+		Addr:     "0.0.0.0:9999",
 		ErrorLog: zap.NewStdLog(l),
 		Handler:  stonks.NewDefaultStonksGoTSRPCProxy(service),
 	}
