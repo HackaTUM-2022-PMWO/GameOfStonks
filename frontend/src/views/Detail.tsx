@@ -4,7 +4,7 @@ import { StonkGraph } from "../components/graphs/StonkGraph";
 import { Spinner } from "../components/spinner/Spinner";
 import { useStonkState } from "../model/store";
 import { Routes } from "../router/router";
-import { StonkInfo } from "../services/vo-stonks";
+import {StonkInfo, StonkName} from "../services/vo-stonks";
 
 function Detail() {
   const getStonkInfo = useStonkState((state) => state.getStonkInfo);
@@ -25,7 +25,7 @@ function Detail() {
       return;
     }
 
-    getStonkInfo(stonkName)
+    getStonkInfo(stonkName as StonkName)
       .then(({ ret: info, ret_1: err }) => {
         if (err) {
           onError();

@@ -8,7 +8,7 @@ module.exports = {
         foreground: "#F4F4F4",
         accent: "#FF9551",
         primary: "#EEE",
-        secondary: "#EFEFEF",
+        secondary: "#2f2b2b",
       },
       boxShadow: {},
     },
