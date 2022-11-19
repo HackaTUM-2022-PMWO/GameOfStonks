@@ -11,11 +11,7 @@ import (
 )
 
 type StonksServiceGoTSRPCClient interface {
-	GetStonkInfo(ctx go_context.Context, id string) (retGetStonkInfo_0 StonkInfo, retGetStonkInfo_1 *Err, clientErr error)
-	Hello(ctx go_context.Context, name string) (retHello_0 string, retHello_1 *Err, clientErr error)
-	HelloInterface(ctx go_context.Context, anything interface{}, anythingMap map[string]interface{}, anythingSlice []interface{}) (clientErr error)
-	HelloNumberMaps(ctx go_context.Context, intMap map[int]string) (floatMap map[float64]string, clientErr error)
-	HelloScalarError(ctx go_context.Context) (err *ScalarError, clientErr error)
+	GetStonkInfo(ctx go_context.Context, stonk string) (retGetStonkInfo_0 StonkInfo, retGetStonkInfo_1 *Err, clientErr error)
 	NewUser(ctx go_context.Context, name string) (retNewUser_0 *Err, clientErr error)
 	StartSession(ctx go_context.Context, id string) (retStartSession_0 []User, retStartSession_1 *Err, clientErr error)
 }
@@ -41,52 +37,12 @@ func NewStonksServiceGoTSRPCClientWithClient(url string, endpoint string, client
 		Client:   gotsrpc.NewClientWithHttpClient(client),
 	}
 }
-func (tsc *HTTPStonksServiceGoTSRPCClient) GetStonkInfo(ctx go_context.Context, id string) (retGetStonkInfo_0 StonkInfo, retGetStonkInfo_1 *Err, clientErr error) {
-	args := []interface{}{id}
+func (tsc *HTTPStonksServiceGoTSRPCClient) GetStonkInfo(ctx go_context.Context, stonk string) (retGetStonkInfo_0 StonkInfo, retGetStonkInfo_1 *Err, clientErr error) {
+	args := []interface{}{stonk}
 	reply := []interface{}{&retGetStonkInfo_0, &retGetStonkInfo_1}
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "GetStonkInfo", args, reply)
 	if clientErr != nil {
 		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy GetStonkInfo")
-	}
-	return
-}
-
-func (tsc *HTTPStonksServiceGoTSRPCClient) Hello(ctx go_context.Context, name string) (retHello_0 string, retHello_1 *Err, clientErr error) {
-	args := []interface{}{name}
-	reply := []interface{}{&retHello_0, &retHello_1}
-	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "Hello", args, reply)
-	if clientErr != nil {
-		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy Hello")
-	}
-	return
-}
-
-func (tsc *HTTPStonksServiceGoTSRPCClient) HelloInterface(ctx go_context.Context, anything interface{}, anythingMap map[string]interface{}, anythingSlice []interface{}) (clientErr error) {
-	args := []interface{}{anything, anythingMap, anythingSlice}
-	reply := []interface{}{}
-	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "HelloInterface", args, reply)
-	if clientErr != nil {
-		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy HelloInterface")
-	}
-	return
-}
-
-func (tsc *HTTPStonksServiceGoTSRPCClient) HelloNumberMaps(ctx go_context.Context, intMap map[int]string) (floatMap map[float64]string, clientErr error) {
-	args := []interface{}{intMap}
-	reply := []interface{}{&floatMap}
-	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "HelloNumberMaps", args, reply)
-	if clientErr != nil {
-		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy HelloNumberMaps")
-	}
-	return
-}
-
-func (tsc *HTTPStonksServiceGoTSRPCClient) HelloScalarError(ctx go_context.Context) (err *ScalarError, clientErr error) {
-	args := []interface{}{}
-	reply := []interface{}{&err}
-	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "HelloScalarError", args, reply)
-	if clientErr != nil {
-		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy HelloScalarError")
 	}
 	return
 }

@@ -1,6 +1,7 @@
 package stonks
 
 import (
+	"errors"
 	http "net/http"
 	time "time"
 
@@ -24,6 +25,8 @@ func (se *ScalarError) Error() string {
 type ScalarInPlace string
 
 type StonksService struct {
+
+	// users are only held ephemeraly
 	waitingUsers []User
 	activeUsers  []User
 }
@@ -32,13 +35,18 @@ type User struct {
 	id string // NOTE: private on purpose
 	// TODO: Probably need to add the ID without leaking it to other users (impersenation!)
 	Name string
+
+	money float64
 }
 
 type StonkInfo struct {
 	ID string
+
+	// TODO: Add the graph data
+	// History map[]
 	// TODO: Sort by timestamps!
-	History []Match
-	Orders  []Order
+	MatchHistory []Match
+	Orders       []Order
 }
 
 type Match struct {
@@ -64,6 +72,18 @@ const (
 
 func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name string) *Err {
 
+	cookie, err := r.Cookie("user")
+	if errors.Is(err, http.ErrNoCookie) {
+		// nothing to do
+	} else {
+		// try to find the user by the id
+		for _, u := range s.waitingUsers {
+			if u.id == cookie.Value {
+				return &Err{"user already registered"}
+			}
+		}
+	}
+
 	u := User{
 		id:   uuid.New().String(),
 		Name: name,
@@ -71,8 +91,8 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	s.waitingUsers = append(s.waitingUsers, u)
 
 	// Set a cookie
-	cookie := http.Cookie{Name: "user", Value: u.id, Expires: time.Now().Add(time.Hour * 24 * 7)}
-	http.SetCookie(w, &cookie)
+	cookie = &http.Cookie{Name: "user", Value: u.id, Expires: time.Now().Add(time.Hour * 24 * 7)}
+	http.SetCookie(w, cookie)
 	return nil
 }
 
@@ -89,40 +109,14 @@ func (s *StonksService) StartSession(w http.ResponseWriter, r *http.Request, id 
 	return s.activeUsers, nil
 }
 
-func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, id string) (StonkInfo, *Err) {
+func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, stonk string) (StonkInfo, *Err) {
 	// FIXME: Somehow verify the user
 
 	// TODO: Get the data from the collections
+	//orders, err := s.orderCol.GetOrders(r.Context(), stonk, nil)
 
 	// TODO: Transform the data
 	// TODO: return the shit
 
 	return StonkInfo{}, nil
-}
-
-func (s *StonksService) Hello(name string) (string, *Err) {
-	if name == "Peter" {
-		return "", &Err{"fuck you Peter I do not like you"}
-	}
-	return "Hello from the server: " + name, nil
-}
-
-func (s *StonksService) HelloInterface(anything interface{}, anythingMap map[string]interface{}, anythingSlice []interface{}) {
-
-}
-
-func (s *StonksService) HelloNumberMaps(intMap map[int]string) (floatMap map[float64]string) {
-	floatMap = map[float64]string{}
-	for i, str := range intMap {
-		floatMap[float64(i)] = str
-	}
-	return
-}
-
-func (s *StonksService) HelloScalarError() (err *ScalarError) {
-	return
-}
-
-func (s *StonksService) nothingInNothinOut() {
-
 }

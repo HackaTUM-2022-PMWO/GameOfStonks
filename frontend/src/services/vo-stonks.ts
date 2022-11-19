@@ -21,12 +21,10 @@ export interface Order {
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.OrderType
 export type OrderType = string
-// github.com/hackaTUM/GameOfStonks/services/stonks.ScalarError
-export type ScalarError = string
 // github.com/hackaTUM/GameOfStonks/services/stonks.StonkInfo
 export interface StonkInfo {
 	ID:string;
-	History:Array<github_com_hackaTUM_GameOfStonks_services_stonks.Match>|null;
+	MatchHistory:Array<github_com_hackaTUM_GameOfStonks_services_stonks.Match>|null;
 	Orders:Array<github_com_hackaTUM_GameOfStonks_services_stonks.Order>|null;
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.User

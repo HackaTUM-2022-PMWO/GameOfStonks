@@ -12,13 +12,9 @@ import (
 )
 
 const (
-	StonksServiceGoTSRPCProxyGetStonkInfo     = "GetStonkInfo"
-	StonksServiceGoTSRPCProxyHello            = "Hello"
-	StonksServiceGoTSRPCProxyHelloInterface   = "HelloInterface"
-	StonksServiceGoTSRPCProxyHelloNumberMaps  = "HelloNumberMaps"
-	StonksServiceGoTSRPCProxyHelloScalarError = "HelloScalarError"
-	StonksServiceGoTSRPCProxyNewUser          = "NewUser"
-	StonksServiceGoTSRPCProxyStartSession     = "StartSession"
+	StonksServiceGoTSRPCProxyGetStonkInfo = "GetStonkInfo"
+	StonksServiceGoTSRPCProxyNewUser      = "NewUser"
+	StonksServiceGoTSRPCProxyStartSession = "StartSession"
 )
 
 type StonksServiceGoTSRPCProxy struct {
@@ -59,16 +55,16 @@ func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Req
 			rets []interface{}
 		)
 		var (
-			arg_id string
+			arg_stonk string
 		)
-		args = []interface{}{&arg_id}
+		args = []interface{}{&arg_stonk}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
 			gotsrpc.ErrorCouldNotLoadArgs(w)
 			return
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		getStonkInfoRet, getStonkInfoRet_1 := p.service.GetStonkInfo(&rw, r, arg_id)
+		getStonkInfoRet, getStonkInfoRet_1 := p.service.GetStonkInfo(&rw, r, arg_stonk)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{getStonkInfoRet, getStonkInfoRet_1}
@@ -76,92 +72,6 @@ func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Req
 				gotsrpc.ErrorCouldNotReply(w)
 				return
 			}
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	case StonksServiceGoTSRPCProxyHello:
-		var (
-			args []interface{}
-			rets []interface{}
-		)
-		var (
-			arg_name string
-		)
-		args = []interface{}{&arg_name}
-		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
-			gotsrpc.ErrorCouldNotLoadArgs(w)
-			return
-		}
-		executionStart := time.Now()
-		helloRet, helloRet_1 := p.service.Hello(arg_name)
-		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{helloRet, helloRet_1}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	case StonksServiceGoTSRPCProxyHelloInterface:
-		var (
-			args []interface{}
-			rets []interface{}
-		)
-		var (
-			arg_anything      interface{}
-			arg_anythingMap   map[string]interface{}
-			arg_anythingSlice []interface{}
-		)
-		args = []interface{}{&arg_anything, &arg_anythingMap, &arg_anythingSlice}
-		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
-			gotsrpc.ErrorCouldNotLoadArgs(w)
-			return
-		}
-		executionStart := time.Now()
-		p.service.HelloInterface(arg_anything, arg_anythingMap, arg_anythingSlice)
-		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	case StonksServiceGoTSRPCProxyHelloNumberMaps:
-		var (
-			args []interface{}
-			rets []interface{}
-		)
-		var (
-			arg_intMap map[int]string
-		)
-		args = []interface{}{&arg_intMap}
-		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
-			gotsrpc.ErrorCouldNotLoadArgs(w)
-			return
-		}
-		executionStart := time.Now()
-		helloNumberMapsFloatMap := p.service.HelloNumberMaps(arg_intMap)
-		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{helloNumberMapsFloatMap}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	case StonksServiceGoTSRPCProxyHelloScalarError:
-		var (
-			args []interface{}
-			rets []interface{}
-		)
-		executionStart := time.Now()
-		helloScalarErrorErr := p.service.HelloScalarError()
-		callStats.Execution = time.Since(executionStart)
-		rets = []interface{}{helloScalarErrorErr}
-		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-			gotsrpc.ErrorCouldNotReply(w)
-			return
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return

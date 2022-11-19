@@ -9,8 +9,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/hackaTUM/GameOfStonks/store"
 	"net/http"
+
+	"github.com/hackaTUM/GameOfStonks/store"
 
 	"github.com/hackaTUM/GameOfStonks/services/stonks"
 	"go.uber.org/zap"
@@ -29,20 +30,19 @@ func main() {
 	OrdersCollection := ordersClient.Database("stonks").Collection("orders")
 
 	store.NewMemoryOrderPersistor(OrdersCollection, l)
+	defer func() {
+		err = ordersClient.Disconnect(context.TODO())
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Connection to MongoDB closed.")
+	}()
 
-	// getorder
-	// addOrder
-	// removeOrder
-	// updateOrder
-	//
+	// TODO: initialize the matcher
+	// TODO: close the matcher (matcher.Close())
 
-	err = ordersClient.Disconnect(context.TODO())
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Connection to MongoDB closed.")
 	service := &stonks.StonksService{
+
 		// TODO: Add an api
 	}
 
@@ -55,9 +55,4 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	// http.HandleFunc("/createOrder", handler.CreateOrderHandler(l, mongostore))
-	// http.HandleFunc("/updateOrder", handler.UpdateOrderHandler(l, mongostore))
-
-	// log.Fatal(http.ListenAndServe(":8081", nil))
 }
