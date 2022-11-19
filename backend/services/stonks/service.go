@@ -36,6 +36,8 @@ type StonksService struct {
 
 	matchUpdateCh <-chan []*store.Match
 
+	sseCh chan State
+
 	// users are only held ephemeraly
 	waitingUsers map[string]*User
 	activeUsers  map[string]*User
@@ -50,6 +52,7 @@ func NewStonksService(
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
 	matchUpdateCh <-chan []*store.Match,
+	sseCh chan State,
 ) *StonksService {
 	return &StonksService{
 		l:             l.With(zap.String("component", "service")),
@@ -60,6 +63,7 @@ func NewStonksService(
 		orderP:        orderP,
 		matchP:        matchP,
 		matchUpdateCh: matchUpdateCh,
+		sseCh:         sseCh,
 
 		waitingUsers: make(map[string]*User, 5),
 		activeUsers:  make(map[string]*User, 5),
@@ -167,6 +171,11 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	}
 
 	s.waitingUsers[u.id] = u
+
+	// TODO: Maybe change the condition before the presentation
+	if len(s.waitingUsers) >= 2 {
+		s.startSession()
+	}
 
 	// Set a cookie
 	cookie := &http.Cookie{Name: "user", Value: u.id, Expires: time.Now().Add(time.Hour * 24 * 7)}
@@ -289,8 +298,8 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 			Reload: true,
 			Finish: nil,
 		}
-		// FIXME: Send to SSE chan
-		_ = state
+
+		s.sseCh <- state
 	}
 
 	ts, ok := s.prices[stonk]

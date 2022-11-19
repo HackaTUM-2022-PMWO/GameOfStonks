@@ -130,8 +130,7 @@ func (s *StonksService) startSession() {
 	// make sure all users are up to date
 	_ = s.update()
 
-	// TODO: Start a timer for the end
-
+	// Start a timer for the end
 	time.AfterFunc(s.roundDuration, func() {
 		users := make([]*User, 0, len(s.activeUsers))
 		for _, u := range s.activeUsers {
@@ -148,9 +147,7 @@ func (s *StonksService) startSession() {
 			Reload: false, // the front-end will start the game so no need to reload the current page
 			Finish: users,
 		}
-
-		// FIXME: Send to SSE State chan
-		_ = state
+		s.sseCh <- state
 
 		s.activeUsers = make(map[string]*User, len(s.activeUsers))
 	})
@@ -160,7 +157,5 @@ func (s *StonksService) startSession() {
 		Reload: false, // the front-end will start the game so no need to reload the current page
 		Finish: nil,
 	}
-
-	// FIXME: Send to SSE State chan
-	_ = state
+	s.sseCh <- state
 }
