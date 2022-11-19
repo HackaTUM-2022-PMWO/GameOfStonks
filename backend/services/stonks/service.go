@@ -39,6 +39,8 @@ type StonksService struct {
 	orderP store.OrderPersistor
 	matchP store.MatchPersistor
 
+	matchUpdateCh <-chan []*store.Match
+
 	// users are only held ephemeraly
 	waitingUsers map[string]User
 	activeUsers  map[string]User
@@ -50,13 +52,16 @@ func NewStonksService(
 	startMoney float64,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
+	matchUpdateCh <-chan []*store.Match,
 ) *StonksService {
 	return &StonksService{
-		l:            l.With(zap.String("component", "service")),
-		prices:       NewPrices(initialStonkPrices),
-		startMoney:   startMoney,
-		orderP:       orderP,
-		matchP:       matchP,
+		l:             l.With(zap.String("component", "service")),
+		prices:        NewPrices(initialStonkPrices),
+		startMoney:    startMoney,
+		orderP:        orderP,
+		matchP:        matchP,
+		matchUpdateCh: matchUpdateCh,
+
 		waitingUsers: make(map[string]User, 5),
 		activeUsers:  make(map[string]User, 5),
 	}
@@ -190,6 +195,13 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	// transform the orders
 	matches := matchsToStonksVo(storeMatches)
 
+	// update the prices before we retrieve them
+	err = s.update()
+	if err != nil {
+		s.l.Error("unable to update", zap.Error(err))
+		return StonkInfo{}, &Err{"unable to update"}
+	}
+
 	ts, ok := s.prices[stonk]
 	if !ok {
 		s.l.Error("no time series found", zap.String("stonk", string(stonk)))
@@ -227,7 +239,16 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 
 	// Make sure the stonk exists
 	if !cmd.Stonk.IsValid() {
+		s.l.Error("user is not an active user",
+			zap.String("user_id", userId),
+			zap.Float64("price", cmd.Price),
+		)
 		return &Err{"invalid stonk"}
+	}
+
+	// make sure the price is not negative
+	if cmd.Price < 0. {
+		return &Err{"negative price"}
 	}
 
 	user, ok := s.activeUsers[userId]
@@ -270,9 +291,9 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 }
 
 // TODO: Add functions for:
-// - GetUserInfo (users current portfolie + others)
 // - UpdateOrder
 // - DeleteOrder
+// - GetUserInfo (users current portfolie + others)
 
 // TODO: Add SSE for:
 // - StartSession(?)
@@ -283,6 +304,35 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 //---------------------------------------------------------------------------
 // ~ utils
 //---------------------------------------------------------------------------
+
+// TODO: Need to update player NetWorth
+func (s *StonksService) update() error {
+	// drain the updates chanel until it is empty
+	for {
+		select {
+		case matches := <-s.matchUpdateCh:
+			// update the stonk prices
+			time := make(map[StonkName]int, len(s.prices))
+			for stonkName, stonkPrices := range s.prices {
+				time[stonkName] = stonkPrices[len(stonkPrices)-1].Time
+			}
+			for _, match := range matches {
+				stonkName := StonkName(match.Stonk)
+				s.prices[stonkName] = append(s.prices[stonkName], DataPoint{
+					Time:  time[stonkName],
+					Value: (match.SellOrder.Price + match.BuyOrder.Price) / 2.,
+				})
+			}
+
+			// FIXME: Adapt player NetWorth
+			// s.activeUsers[]
+
+			// see if there are more updates
+		default:
+			return nil
+		}
+	}
+}
 
 func userExists(r *http.Request, users map[string]User) (bool, string, error) {
 	cookie, err := r.Cookie("user")
