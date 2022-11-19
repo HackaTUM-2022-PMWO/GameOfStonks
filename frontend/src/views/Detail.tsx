@@ -13,6 +13,7 @@ import SvgPlus from "../icons/Plus";
 import { useStonkState } from "../model/store";
 import { getTradeUrl, Routes } from "../router/router";
 import { StonkInfo, StonkName } from "../services/vo-stonks";
+import SvgEdit from "../icons/Edit";
 
 const formatter = new Intl.NumberFormat("en-IN", {
   maximumSignificantDigits: 3,
@@ -110,15 +111,21 @@ function Detail() {
         </ul>
       </Card>
       <div className="flex justify-evenly">
-        <RouterButton route={getTradeUrl(stonkName!, "buy") as Routes}>
-          <div className="flex items-center gap-4">
-            <SvgPlus /> Buy
-          </div>
-        </RouterButton>
-        <RouterButton route={getTradeUrl(stonkName!, "sell") as Routes}>
+        <RouterButton className="py-4 px-8" route={getTradeUrl(stonkName!, "sell") as Routes}>
           <div className="flex items-center gap-4">
             <SvgMinus />
             Sell
+          </div>
+        </RouterButton>
+        <RouterButton className="py-4 px-8" route={getTradeUrl(stonkName!, "delete") as Routes}>
+          <div className="flex items-center gap-4">
+            <SvgEdit />
+            Delete
+          </div>
+        </RouterButton>
+        <RouterButton className="py-4 px-8" route={getTradeUrl(stonkName!, "buy") as Routes}>
+          <div className="flex items-center gap-4">
+            <SvgPlus /> Buy
           </div>
         </RouterButton>
       </div>

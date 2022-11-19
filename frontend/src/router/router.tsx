@@ -26,7 +26,7 @@ export enum Routes {
 export const getStonkUrl = (stonkName: string) =>
   Routes.Detail.replace(":stonkName", stonkName);
 
-export const getTradeUrl = (stonkName: string, mode: "buy" | "sell") =>
+export const getTradeUrl = (stonkName: string, mode: "buy" | "sell" | "delete") =>
   Routes.Trade.replace(":stonkName", stonkName).replace(":mode", mode);
 
 export const router = createBrowserRouter([
