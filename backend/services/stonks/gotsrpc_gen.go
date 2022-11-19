@@ -14,6 +14,7 @@ import (
 const (
 	StonksServiceGoTSRPCProxyGetStonkInfo = "GetStonkInfo"
 	StonksServiceGoTSRPCProxyNewUser      = "NewUser"
+	StonksServiceGoTSRPCProxyPlaceOrder   = "PlaceOrder"
 	StonksServiceGoTSRPCProxyStartSession = "StartSession"
 )
 
@@ -55,7 +56,7 @@ func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Req
 			rets []interface{}
 		)
 		var (
-			arg_stonk string
+			arg_stonk StonkName
 		)
 		args = []interface{}{&arg_stonk}
 		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
@@ -90,10 +91,36 @@ func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Req
 		}
 		executionStart := time.Now()
 		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		newUserRet := p.service.NewUser(&rw, r, arg_name)
+		newUserRet, newUserRet_1 := p.service.NewUser(&rw, r, arg_name)
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
-			rets = []interface{}{newUserRet}
+			rets = []interface{}{newUserRet, newUserRet_1}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case StonksServiceGoTSRPCProxyPlaceOrder:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		var (
+			arg_cmd PlaceOrderCmd
+		)
+		args = []interface{}{&arg_cmd}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		placeOrderRet := p.service.PlaceOrder(&rw, r, arg_cmd)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{placeOrderRet}
 			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
 				gotsrpc.ErrorCouldNotReply(w)
 				return
