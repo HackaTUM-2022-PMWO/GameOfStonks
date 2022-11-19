@@ -19,7 +19,10 @@ function Onboard() {
   };
 
   return (
-    <form className="flex flex-col justify-center items-center h-screen space-y-5">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col justify-center items-center h-screen space-y-5"
+    >
       <h1>Welcome to the GAME OF STONKS!</h1>
       <h2>Tell us your name...</h2>
       <Input
