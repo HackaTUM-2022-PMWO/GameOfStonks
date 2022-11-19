@@ -10,6 +10,7 @@ import {
 import { Card } from "../components/card/Card";
 import { GlobalGraph } from "../components/graphs/GlobalGraph";
 import { PlayerListItem } from "../components/listItems/PlayerListItem";
+import { StonkPositionList } from "../components/listItems/StonkPositionList";
 
 function Home() {
   return (
@@ -19,7 +20,9 @@ function Home() {
         <GlobalGraph />
         {/* </ResponsiveContainer> */}
       </Card>
-      <Card></Card>
+      <Card>
+        <StonkPositionList stonks={[]} />
+      </Card>
     </>
   );
 }
