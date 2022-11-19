@@ -1,6 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/hackaTUM/GameOfStonks/store"
 	"net/http"
 
 	"github.com/hackaTUM/GameOfStonks/services/stonks"
@@ -13,12 +22,26 @@ func main() {
 		panic(err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	ordersClient, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://foo:bar@localhost:27017"))
+	// if err != nil { return err }
+	OrdersCollection := ordersClient.Database("stonks").Collection("orders")
+
+	store.NewMemoryOrderPersistor(OrdersCollection, l)
+
 	// getorder
 	// addOrder
 	// removeOrder
 	// updateOrder
 	//
 
+	err = ordersClient.Disconnect(context.TODO())
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connection to MongoDB closed.")
 	service := &stonks.StonksService{
 		// TODO: Add an api
 	}

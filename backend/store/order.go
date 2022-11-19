@@ -1,26 +1,29 @@
 package store
 
-type OrderPersistor interface {
-	GetOrder(id string) (*Order, error)
+import "time"
 
+type OrderPersistor interface {
+	GetOrderById(id string) (*Order, error)
+	GetOrdersByUser(user User) ([]*Order, error)
 	AddOrder(*Order) error
 	DeleteOrder(id string) error
-	GetOrders() ([]Order, error)
-	GetMatchHistroy([]Match, error)
+	GetOrders() ([]*Order, error)
+	GetMatchHistory([]Match, error)
 }
 
 type Order struct {
-	Id       string    `yaml:"id"`
-	Security Security  `yaml:"security"`
-	Quantity int       `yaml:"quantity"`
-	Price    float64   `yaml:"price"`
-	Type     OrderType `yaml:"type"`
-	User     User      `yaml:"user"`
+	Id       string    `bson:"id"`
+	Stonk    Stonk     `bson:"stonk"`
+	Quantity int       `bson:"quantity"`
+	Price    float64   `bson:"price"`
+	Type     OrderType `bson:"type"`
+	User     User      `bson:"user"`
+	Time 	 time.Time `bson:"time"`
 }
 
 type User struct {
-	ID   string `yaml:"id"`
-	Name string `yaml:"name"`
+	ID   string `bson:"id"`
+	Name string `bson:"name"`
 }
 
 type OrderType string
@@ -30,9 +33,9 @@ const (
 	OrderTypeBuy  OrderType = "buy"
 )
 
-type Security string
+type Stonk string
 
 const (
-	SecurityPaperClip Security = "paperClip"
-	SecurityScissor   Security = "scissor"
+	StonkPaperClip Stonk = "paperClip"
+	StonkScissor   Stonk = "scissor"
 )

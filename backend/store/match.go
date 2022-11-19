@@ -10,7 +10,7 @@ type MatchPersistor interface {
 // TODO: Create a new order if it was only partially matched
 type Match struct {
 	Id        string    `yaml:"id"`
-	Security  Security  `yaml:"security"`
+	Stonk     Stonk     `yaml:"security"`
 	SellOrder *Order    `yaml:"sellOrder"`
 	BuyOrder  *Order    `yaml:"buyOrder"`
 	TS        time.Time `yaml:"buyOrder"`
