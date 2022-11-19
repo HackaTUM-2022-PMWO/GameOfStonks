@@ -17,6 +17,8 @@ const (
 	StonksServiceGoTSRPCProxyHelloInterface   = "HelloInterface"
 	StonksServiceGoTSRPCProxyHelloNumberMaps  = "HelloNumberMaps"
 	StonksServiceGoTSRPCProxyHelloScalarError = "HelloScalarError"
+	StonksServiceGoTSRPCProxyNewUser          = "NewUser"
+	StonksServiceGoTSRPCProxyStartSession     = "StartSession"
 )
 
 type StonksServiceGoTSRPCProxy struct {
@@ -160,6 +162,58 @@ func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Req
 		if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
 			gotsrpc.ErrorCouldNotReply(w)
 			return
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case StonksServiceGoTSRPCProxyNewUser:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		var (
+			arg_name string
+		)
+		args = []interface{}{&arg_name}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		newUserRet := p.service.NewUser(&rw, r, arg_name)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{newUserRet}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case StonksServiceGoTSRPCProxyStartSession:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		var (
+			arg_id string
+		)
+		args = []interface{}{&arg_id}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		startSessionRet, startSessionRet_1 := p.service.StartSession(&rw, r, arg_id)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{startSessionRet, startSessionRet_1}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return

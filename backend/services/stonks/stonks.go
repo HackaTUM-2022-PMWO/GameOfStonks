@@ -2,6 +2,9 @@ package stonks
 
 import (
 	http "net/http"
+	time "time"
+
+	"github.com/google/uuid"
 )
 
 type Err struct {
@@ -21,14 +24,21 @@ func (se *ScalarError) Error() string {
 type ScalarInPlace string
 
 type StonksService struct {
+	waitingUsers []User
+	activeUsers  []User
+}
+
+type User struct {
+	id string // NOTE: private on purpose
+	// TODO: Probably need to add the ID without leaking it to other users (impersenation!)
+	Name string
 }
 
 type StonkInfo struct {
 	ID string
 	// TODO: Sort by timestamps!
 	History []Match
-	// TODO: Add history of all users for this stonk
-	// TODO: Add this users current info
+	Orders  []Order
 }
 
 type Match struct {
@@ -38,13 +48,55 @@ type Match struct {
 	TimeStamp int64
 }
 
+type Order struct {
+	User      string
+	OrderType OrderType
+	Quantity  int
+	TimeStamp int64
+}
+
+type OrderType string
+
+const (
+	OrderTypeSell = "sell"
+	OrderTypeBuy  = "buy"
+)
+
+func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name string) *Err {
+
+	u := User{
+		id:   uuid.New().String(),
+		Name: name,
+	}
+	s.waitingUsers = append(s.waitingUsers, u)
+
+	// Set a cookie
+	cookie := http.Cookie{Name: "user", Value: u.id, Expires: time.Now().Add(time.Hour * 24 * 7)}
+	http.SetCookie(w, &cookie)
+	return nil
+}
+
+// TODO: Actually this should be an SSE
+func (s *StonksService) StartSession(w http.ResponseWriter, r *http.Request, id string) ([]User, *Err) {
+	// TODO: Need to clear the users after one round
+	if len(s.activeUsers) != 0 {
+		return nil, &Err{"other session still active"}
+	}
+
+	// make the waitingUsers the active ones
+	s.activeUsers = s.waitingUsers
+
+	return s.activeUsers, nil
+}
+
 func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, id string) (StonkInfo, *Err) {
-	/*
-		if strings.Contains(identifier, "@") {
-			return s.validateAndExistsEmail(w, r, identifier)
-		}
-		return s.validateAndExistsLoyalty(w, r, identifier)
-	*/
+	// FIXME: Somehow verify the user
+
+	// TODO: Get the data from the collections
+
+	// TODO: Transform the data
+	// TODO: return the shit
+
 	return StonkInfo{}, nil
 }
 

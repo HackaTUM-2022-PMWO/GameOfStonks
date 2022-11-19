@@ -16,6 +16,8 @@ type StonksServiceGoTSRPCClient interface {
 	HelloInterface(ctx go_context.Context, anything interface{}, anythingMap map[string]interface{}, anythingSlice []interface{}) (clientErr error)
 	HelloNumberMaps(ctx go_context.Context, intMap map[int]string) (floatMap map[float64]string, clientErr error)
 	HelloScalarError(ctx go_context.Context) (err *ScalarError, clientErr error)
+	NewUser(ctx go_context.Context, name string) (retNewUser_0 *Err, clientErr error)
+	StartSession(ctx go_context.Context, id string) (retStartSession_0 []User, retStartSession_1 *Err, clientErr error)
 }
 
 type HTTPStonksServiceGoTSRPCClient struct {
@@ -85,6 +87,26 @@ func (tsc *HTTPStonksServiceGoTSRPCClient) HelloScalarError(ctx go_context.Conte
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "HelloScalarError", args, reply)
 	if clientErr != nil {
 		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy HelloScalarError")
+	}
+	return
+}
+
+func (tsc *HTTPStonksServiceGoTSRPCClient) NewUser(ctx go_context.Context, name string) (retNewUser_0 *Err, clientErr error) {
+	args := []interface{}{name}
+	reply := []interface{}{&retNewUser_0}
+	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "NewUser", args, reply)
+	if clientErr != nil {
+		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy NewUser")
+	}
+	return
+}
+
+func (tsc *HTTPStonksServiceGoTSRPCClient) StartSession(ctx go_context.Context, id string) (retStartSession_0 []User, retStartSession_1 *Err, clientErr error) {
+	args := []interface{}{id}
+	reply := []interface{}{&retStartSession_0, &retStartSession_1}
+	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "StartSession", args, reply)
+	if clientErr != nil {
+		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy StartSession")
 	}
 	return
 }
