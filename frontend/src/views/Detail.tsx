@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/buttons/Button";
+import { RouterButton } from "../components/buttons/RouterButton";
 import { Card } from "../components/card/Card";
+import { Container } from "../components/Container";
 import { Currency } from "../components/Currency";
 import { StonkGraph } from "../components/graphs/StonkGraph";
 import { Spinner } from "../components/spinner/Spinner";
@@ -9,7 +11,7 @@ import SvgArrowRight from "../icons/ArrowRight";
 import SvgMinus from "../icons/Minus";
 import SvgPlus from "../icons/Plus";
 import { useStonkState } from "../model/store";
-import { Routes } from "../router/router";
+import { getTradeUrl, Routes } from "../router/router";
 import { StonkInfo, StonkName } from "../services/vo-stonks";
 
 const formatter = new Intl.NumberFormat("en-IN", {
@@ -18,7 +20,7 @@ const formatter = new Intl.NumberFormat("en-IN", {
   minimumFractionDigits: 2,
 });
 
-const CurrencyDisplay = (props: { value: number }) => {
+export const CurrencyDisplay = (props: { value: number }) => {
   return (
     <>
       {formatter.format(props.value)} <Currency />
@@ -61,7 +63,7 @@ function Detail() {
   }
 
   return (
-    <div className="p-7">
+    <Container>
       <Card className="m-0">
         <div className="flex justify-between">
           <h2>{stonk.Name}</h2>
@@ -98,19 +100,19 @@ function Detail() {
         </ul>
       </Card>
       <div className="flex justify-evenly">
-        <Button>
+        <RouterButton route={getTradeUrl(stonk.Name, "buy") as Routes}>
           <div className="flex items-center gap-4">
             <SvgPlus /> Buy
           </div>
-        </Button>
-        <Button>
+        </RouterButton>
+        <RouterButton route={getTradeUrl(stonk.Name, "sell") as Routes}>
           <div className="flex items-center gap-4">
             <SvgMinus />
             Sell
           </div>
-        </Button>
+        </RouterButton>
       </div>
-    </div>
+    </Container>
   );
 }
 

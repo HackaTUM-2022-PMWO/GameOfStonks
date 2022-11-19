@@ -10,7 +10,6 @@ export function PlayerListItem(props: {
   return (
     <li className="flex flex-row items-center space-x-4 content-center">
       <img
-        style={{}}
         className={`p-1 w-10 h-10 rounded-full ring-2 ring-gray-[${
           colors[props.idx % 5]
         }]`}
