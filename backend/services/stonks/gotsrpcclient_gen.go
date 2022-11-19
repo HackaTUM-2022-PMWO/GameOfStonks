@@ -15,7 +15,6 @@ type StonksServiceGoTSRPCClient interface {
 	GetUserInfo(ctx go_context.Context) (retGetUserInfo_0 *User, retGetUserInfo_1 []*User, retGetUserInfo_2 *Err, clientErr error)
 	NewUser(ctx go_context.Context, name string) (retNewUser_0 []*User, retNewUser_1 *Err, clientErr error)
 	PlaceOrder(ctx go_context.Context, cmd PlaceOrderCmd) (retPlaceOrder_0 *Err, clientErr error)
-	StartSession(ctx go_context.Context, id string) (retStartSession_0 []*User, retStartSession_1 *Err, clientErr error)
 	UpdateOrder(ctx go_context.Context, cmd UpdateOrderCmd) (retUpdateOrder_0 *Err, clientErr error)
 }
 
@@ -76,16 +75,6 @@ func (tsc *HTTPStonksServiceGoTSRPCClient) PlaceOrder(ctx go_context.Context, cm
 	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "PlaceOrder", args, reply)
 	if clientErr != nil {
 		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy PlaceOrder")
-	}
-	return
-}
-
-func (tsc *HTTPStonksServiceGoTSRPCClient) StartSession(ctx go_context.Context, id string) (retStartSession_0 []*User, retStartSession_1 *Err, clientErr error) {
-	args := []interface{}{id}
-	reply := []interface{}{&retStartSession_0, &retStartSession_1}
-	clientErr = tsc.Client.Call(ctx, tsc.URL, tsc.EndPoint, "StartSession", args, reply)
-	if clientErr != nil {
-		clientErr = pkg_errors.WithMessage(clientErr, "failed to call stonks.StonksServiceGoTSRPCProxy StartSession")
 	}
 	return
 }

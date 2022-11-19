@@ -35,7 +35,10 @@ var (
 		stonks.StonkMate:      20,
 	}
 
-	startMoney float64 = 1000.0
+	startMoney    float64       = 1000.0
+	roundDuration time.Duration = 2 * time.Minute
+
+	matcherUpdateInterval time.Duration = time.Millisecond * 2000
 )
 
 func main() {
@@ -71,7 +74,15 @@ func main() {
 
 	// initialize the matcher
 	matchUpdateCh := make(chan []*store.Match, 100)
-	match := matcher.NewMatcher(l, ctx, stonkNames, time.Millisecond*2000, orderP, matchP, matchUpdateCh)
+	match := matcher.NewMatcher(
+		l,
+		ctx,
+		stonkNames,
+		matcherUpdateInterval,
+		orderP,
+		matchP,
+		matchUpdateCh,
+	)
 	defer match.Close()
 
 	service := stonks.NewStonksService(
@@ -79,6 +90,7 @@ func main() {
 		initialStonkPrices,
 		startMoney,
 		startStonks,
+		roundDuration,
 		orderP,
 		matchP,
 		matchUpdateCh,

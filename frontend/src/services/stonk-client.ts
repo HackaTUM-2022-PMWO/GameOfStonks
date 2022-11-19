@@ -22,10 +22,6 @@ export class StonksServiceClient {
 	async placeOrder(cmd:github_com_hackaTUM_GameOfStonks_services_stonks.PlaceOrderCmd):Promise<github_com_hackaTUM_GameOfStonks_services_stonks.Err|null> {
 		return (await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("PlaceOrder", [cmd]))[0]
 	}
-	async startSession(id:string):Promise<{ret:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User|null>|null; ret_1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
-		const response = await this.transport<{0:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User|null>|null; 1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("StartSession", [id])
-		return {ret : response[0], ret_1 : response[1]};
-	}
 	async updateOrder(cmd:github_com_hackaTUM_GameOfStonks_services_stonks.UpdateOrderCmd):Promise<github_com_hackaTUM_GameOfStonks_services_stonks.Err|null> {
 		return (await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("UpdateOrder", [cmd]))[0]
 	}

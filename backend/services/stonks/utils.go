@@ -3,9 +3,13 @@ package stonks
 import (
 	"errors"
 	http "net/http"
+	"sort"
+	"time"
+
+	"go.uber.org/zap"
 )
 
-func (s *StonksService) update() error {
+func (s *StonksService) update() bool {
 	// drain the updates chanel until it is empty
 	updated := false
 	for {
@@ -70,13 +74,12 @@ func (s *StonksService) update() error {
 				}
 			}
 
-			updated = true
 			// see if there are more updates
 		default:
 			if updated {
-				// FIXME: Trigger SSE with new state
+				return true // FIXME: Trigger SSE with new state
 			}
-			return nil
+			return false
 		}
 	}
 }
@@ -96,4 +99,68 @@ func userExists(r *http.Request, users map[string]*User) (bool, string, error) {
 
 	return false, "", nil
 
+}
+
+func (s *StonksService) startSession() {
+	// TODO: Need to clear the users after one round
+	if len(s.activeUsers) != 0 {
+		s.l.Error("session already active",
+			zap.Int("waiting_users_len", len(s.waitingUsers)),
+			zap.Int("active_users_len", len(s.activeUsers)),
+		)
+
+		// FIXME: Somehow need to handle the case when a session is already
+		// 			active and enough people are in the waiting room again
+		// return &Err{"other session still active"}
+	}
+
+	// make the waitingUsers the active ones
+	s.activeUsers = s.waitingUsers
+
+	users := make([]*User, 0, len(s.activeUsers))
+	for _, u := range s.activeUsers {
+		users = append(users, u)
+	}
+
+	// sort the users
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].Name < users[j].Name
+	})
+
+	// make sure all users are up to date
+	_ = s.update()
+
+	// TODO: Start a timer for the end
+
+	time.AfterFunc(s.roundDuration, func() {
+		users := make([]*User, 0, len(s.activeUsers))
+		for _, u := range s.activeUsers {
+			users = append(users, u)
+		}
+
+		// sort the users - highest NetWorth first
+		sort.Slice(users, func(i, j int) bool {
+			return users[i].NetWorth > users[j].NetWorth
+		})
+
+		state := State{
+			Start:  nil,
+			Reload: false, // the front-end will start the game so no need to reload the current page
+			Finish: users,
+		}
+
+		// FIXME: Send to SSE State chan
+		_ = state
+
+		s.activeUsers = make(map[string]*User, len(s.activeUsers))
+	})
+
+	state := State{
+		Start:  users,
+		Reload: false, // the front-end will start the game so no need to reload the current page
+		Finish: nil,
+	}
+
+	// FIXME: Send to SSE State chan
+	_ = state
 }
