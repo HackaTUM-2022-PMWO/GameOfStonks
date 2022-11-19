@@ -11,7 +11,7 @@ import React from 'react';
 import App from "../App";
 
 export enum Routes {
-    Onboard = "/onboard",
+    Onboard = "/",
     Detail = "/detail",
     Home = "/home",
     Lobby = "/lobby",
