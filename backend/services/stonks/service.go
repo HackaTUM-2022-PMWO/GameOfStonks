@@ -102,8 +102,8 @@ type Order struct {
 type OrderType string
 
 const (
-	OrderTypeSell = "sell"
-	OrderTypeBuy  = "buy"
+	OrderTypeSell OrderType = "sell"
+	OrderTypeBuy  OrderType = "buy"
 )
 
 type StonkInfo struct {
@@ -330,16 +330,21 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 		s.l.Error("user is not an active user", zap.String("user_id", userId))
 		return &Err{"user is not an active user"}
 	}
+
 	totalPrice := (cmd.Price * float64(cmd.Quantity))
-	if (user.Money - user.ReservedMoney) < totalPrice {
-		s.l.Error("user has insufficient funds",
-			zap.String("stonk", string(cmd.Stonk)),
-			zap.Float64("price", cmd.Price),
-			zap.Int("quantity", cmd.Quantity),
-			zap.Error(err),
-		)
-		return &Err{"user has insufficient funds"} // TODO: Create separate error
+	if cmd.OrderType == OrderTypeBuy {
+		// make sure the user has sufficient funds
+		if (user.Money - user.ReservedMoney) < totalPrice {
+			s.l.Error("user has insufficient funds",
+				zap.String("stonk", string(cmd.Stonk)),
+				zap.Float64("price", cmd.Price),
+				zap.Int("quantity", cmd.Quantity),
+				zap.Error(err),
+			)
+			return &Err{"user has insufficient funds"} // TODO: Create separate error
+		}
 	}
+	// FIXME: handle sells (no overspending, no double spending)
 
 	// create a store order object
 	order := store.Order{
@@ -362,9 +367,11 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 		return &Err{"unable to insert order"}
 	}
 
-	// increase the reserved money of the user
-	user.ReservedMoney = user.ReservedMoney + totalPrice
-	s.activeUsers[userId] = user
+	if cmd.OrderType == OrderTypeBuy {
+		// increase the reserved money of the user
+		user.ReservedMoney = user.ReservedMoney + totalPrice
+		s.activeUsers[userId] = user
+	}
 
 	return nil
 }

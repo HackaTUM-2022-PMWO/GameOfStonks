@@ -6,6 +6,8 @@ export interface DataPoint {
 	Time:number;
 	Value:number;
 }
+// github.com/hackaTUM/GameOfStonks/services/stonks.DataPoints
+export type DataPoints = Array<github_com_hackaTUM_GameOfStonks_services_stonks.DataPoint>
 // github.com/hackaTUM/GameOfStonks/services/stonks.Err
 export interface Err {
 	message:string;
@@ -25,7 +27,10 @@ export interface Order {
 	TimeStamp:number;
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.OrderType
-export type OrderType = string
+export enum OrderType {
+	Buy = "buy",
+	Sell = "sell",
+}
 // github.com/hackaTUM/GameOfStonks/services/stonks.PlaceOrderCmd
 export interface PlaceOrderCmd {
 	Stonk:github_com_hackaTUM_GameOfStonks_services_stonks.StonkName;
@@ -61,5 +66,8 @@ export interface User {
 	Name:string;
 	Money:number;
 	ReservedMoney:number;
+	Stonks:Record<github_com_hackaTUM_GameOfStonks_services_stonks.StonkName,number>|null;
+	NetWorth:number;
+	NetWorthTimeSeries:github_com_hackaTUM_GameOfStonks_services_stonks.DataPoints|null;
 }
 // end of common js

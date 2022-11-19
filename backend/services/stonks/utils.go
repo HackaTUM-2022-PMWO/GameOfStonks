@@ -13,29 +13,34 @@ func (s *StonksService) update() error {
 		select {
 		case matches := <-s.matchUpdateCh:
 			// update the stonk prices
-			time := make(map[StonkName]int, len(s.prices))
+			// set the previous value as a default, just to make sure the clock advances for the stock
 			for stonkName, stonkPrices := range s.prices {
-				time[stonkName] = stonkPrices.LatestTime()
-			}
-			for _, match := range matches {
-				stonkName := StonkName(match.Stonk)
+				time := stonkPrices.LatestTime() + 1
+				value := stonkPrices.LatestValue()
 				s.prices[stonkName] = append(s.prices[stonkName], DataPoint{
-					Time:  time[stonkName],
-					Value: (match.SellOrder.Price + match.BuyOrder.Price) / 2.,
+					Time:  time,
+					Value: value,
 				})
 			}
+			// update the value to the actual new on if there is a match for this stock
+			for _, match := range matches {
+				stonkName := StonkName(match.Stonk)
+				dataPoints := s.prices[stonkName]
+				dataPoints[len(dataPoints)-1].Value = (match.SellOrder.Price + match.BuyOrder.Price) / 2.
+				s.prices[stonkName] = dataPoints
 
-			// update the users stock position
-			for userId, user := range s.activeUsers {
-				// FIXME: update the users stock position
+				// update the users stock position
+				for userId, user := range s.activeUsers {
+					// FIXME: update the users stock position
 
-				// since the stock prices might have been adjusted, we also have to re-evaluate the users net worth
-				// FIXME: Adapt user's NetWorth (Money-ReservedMoney + Stonks_Quantity*Stonk_LastPrice)
+					// since the stock prices might have been adjusted, we also have to re-evaluate the users net worth
+					// FIXME: Adapt user's NetWorth (Money-ReservedMoney + Stonks_Quantity*Stonk_LastPrice)
 
-				// update the datapoints
-				// FIXME: update the users NetWorthTimeSeries-DataPoints
+					// update the datapoints
+					// FIXME: update the users NetWorthTimeSeries-DataPoints
 
-				s.activeUsers[userId] = user
+					s.activeUsers[userId] = user
+				}
 			}
 
 			updated = true
