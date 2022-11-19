@@ -1,3 +1,4 @@
+import { Airplay } from "../../icons";
 import { StonkInfo } from "../../services/vo-stonks";
 
 export type StonkPositionListProps = { stonks: StonkInfo[] };
