@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hackaTUM/GameOfStonks/store"
 	"go.uber.org/zap"
 )
@@ -92,7 +93,7 @@ func (m *Matcher) Start() {
 					for _, buyOrder := range buyOrders {
 
 						match := &store.Match{
-							Id:        "SOMEID",
+							Id:        uuid.New().String(),
 							Stonk:     sellOrder.Stonk,
 							SellOrder: *sellOrder,
 							BuyOrder:  *buyOrder,
