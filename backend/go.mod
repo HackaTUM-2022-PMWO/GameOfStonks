@@ -2,7 +2,10 @@ module github.com/hackaTUM/GameOfStonks
 
 go 1.19
 
-require go.uber.org/zap v1.23.0
+require (
+	github.com/davecgh/go-spew v1.1.1
+	go.uber.org/zap v1.23.0
+)
 
 require (
 	github.com/stretchr/testify v1.8.1 // indirect
