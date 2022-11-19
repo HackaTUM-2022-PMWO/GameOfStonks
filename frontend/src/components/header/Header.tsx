@@ -4,8 +4,7 @@ import SvgSearch from "../../icons/Search";
 
 export function Header() {
     const logo = require('./../../assets/logo.png');
-    // const gameStarted = useStonkState((state) => state.gameStarted);
-    let gameStarted = true;
+    const gameStarted = useStonkState((state) => state.gameStarted);
     return (
         <header>
             <div className="grid grid-cols-3 items-center shadow px-6 py-3 max-w-screen">
