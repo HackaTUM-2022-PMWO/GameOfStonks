@@ -10,7 +10,7 @@ export type StonksState = {
   // removed after lobby closed or when 401 returned from any service call
   username?: string;
   sessionUsers?: User[];
-
+  gameStarted: boolean;
   stonkInfos?: StonkInfo[];
 };
 
@@ -35,6 +35,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
     return {
       username: undefined,
       stockDetails: [],
+      gameStarted: false,
       loading: false,
 
       register: (name: string) => {
