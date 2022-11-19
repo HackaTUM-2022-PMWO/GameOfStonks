@@ -1,7 +1,6 @@
 package stonks
 
 import (
-	"errors"
 	http "net/http"
 	"sort"
 	time "time"
@@ -75,6 +74,13 @@ type User struct {
 
 	Money         float64
 	ReservedMoney float64
+
+	Stonks map[StonkName]int
+
+	// FIXME: The networth actually needs to be initialized if we also give the user stonks to begin with!
+	NetWorth float64
+
+	NetWorthTimeSeries DataPoints
 
 	// TODO: Need to create a users NetWorth (i.e. money current values of stonks)
 }
@@ -273,6 +279,8 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	}, nil
 }
 
+// FIXME: Check that the user actually has the stock in the required quantity - no price checks needed!
+// FIXME: Prevent double spending of stocks
 func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd PlaceOrderCmd) *Err {
 	if r.Method != http.MethodPost {
 		return &Err{"you gotta post wlad"}
@@ -361,6 +369,8 @@ func (s *StonksService) PlaceOrder(w http.ResponseWriter, r *http.Request, cmd P
 	return nil
 }
 
+// FIXME: Check that the user actually has the stock in the required quantity - no price checks needed!
+// FIXME: Prevent double spending of stocks
 // NOTE: Update order with a quantity of 0 deletes the order
 func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd UpdateOrderCmd) *Err {
 	if r.Method != http.MethodPost {
@@ -490,53 +500,3 @@ func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd 
 // - Order has been matched
 // - NewGameState (how the fuck?)
 // - SessionFinished (need to include leaderboard)
-
-//---------------------------------------------------------------------------
-// ~ utils
-//---------------------------------------------------------------------------
-
-// TODO: Need to update player NetWorth
-func (s *StonksService) update() error {
-	// drain the updates chanel until it is empty
-	for {
-		select {
-		case matches := <-s.matchUpdateCh:
-			// update the stonk prices
-			time := make(map[StonkName]int, len(s.prices))
-			for stonkName, stonkPrices := range s.prices {
-				time[stonkName] = stonkPrices[len(stonkPrices)-1].Time
-			}
-			for _, match := range matches {
-				stonkName := StonkName(match.Stonk)
-				s.prices[stonkName] = append(s.prices[stonkName], DataPoint{
-					Time:  time[stonkName],
-					Value: (match.SellOrder.Price + match.BuyOrder.Price) / 2.,
-				})
-			}
-
-			// FIXME: Adapt player NetWorth
-			// s.activeUsers[]
-
-			// see if there are more updates
-		default:
-			return nil
-		}
-	}
-}
-
-func userExists(r *http.Request, users map[string]User) (bool, string, error) {
-	cookie, err := r.Cookie("user")
-	if errors.Is(err, http.ErrNoCookie) {
-		// nothing to do
-	} else if err != nil {
-		return false, "", err
-	} else {
-		// try to find the user by the id
-		if _, ok := users[cookie.Value]; ok {
-			return true, cookie.Value, nil
-		}
-	}
-
-	return false, "", nil
-
-}
