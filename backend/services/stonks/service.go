@@ -32,7 +32,8 @@ type StonksService struct {
 
 	// configuration values
 	//
-	startMoney float64
+	startMoney  float64
+	startStonks map[StonkName]int
 
 	// Time series data for all the stonks
 	prices Prices
@@ -51,6 +52,7 @@ func NewStonksService(
 	l *zap.Logger,
 	initialStonkPrices map[StonkName]float64,
 	startMoney float64,
+	startStonks map[StonkName]int,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
 	matchUpdateCh <-chan []*store.Match,
@@ -59,6 +61,7 @@ func NewStonksService(
 		l:             l.With(zap.String("component", "service")),
 		prices:        NewPrices(initialStonkPrices),
 		startMoney:    startMoney,
+		startStonks:   startStonks,
 		orderP:        orderP,
 		matchP:        matchP,
 		matchUpdateCh: matchUpdateCh,
@@ -145,6 +148,11 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 		Name:  name,
 		Money: s.startMoney,
 	}
+
+	for s, i := range s.startStonks {
+		u.Stonks[s] = i
+	}
+
 	s.waitingUsers[u.id] = u
 
 	// Set a cookie
@@ -594,9 +602,6 @@ func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd 
 		return nil
 	}
 }
-
-// TODO: Add functions for:
-// - GetUserInfo (users current portfolie + others)
 
 // TODO: Add SSE for:
 // - StartSession(?)
