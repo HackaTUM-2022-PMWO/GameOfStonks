@@ -5,6 +5,7 @@ import {Input} from "../components/inputs/Input";
 import {useStonkState} from "../model/store";
 import {useNavigate} from "react-router-dom";
 import {Button} from "../components/buttons/Button";
+import {Card} from "../components/card/Card";
 
 function Onboard() {
     const [userName, setUserName] = useState("");
@@ -14,7 +15,6 @@ function Onboard() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         register(userName).then((resp) => navigate(Routes.Lobby));
-        // alert(`The name you entered was: ${userName}`);
         // TODO: handle errors
     };
 
@@ -23,7 +23,10 @@ function Onboard() {
             onSubmit={handleSubmit}
             className="flex flex-col justify-center items-center h-screen space-y-5"
         >
-            <h1>Welcome to the GAME OF STONKS!</h1>
+            <Card className="max-w-md">
+                <h1>Welcome to the GAME OF STONKS!</h1>
+                <p>This game is exists to entertain, to learn and to push GameStop through the roof, STONKS! Invite your fellow mates and enjoy trading.</p>
+            </Card>
             <div>
                 <iframe src="https://giphy.com/embed/bMycGOQLESDCEnLNUz" width="100%" height="100%"
                         frameBorder="0" className="giphy-embed" allowFullScreen></iframe>
@@ -39,6 +42,7 @@ function Onboard() {
             />
             <Button type="submit">start trading stonks</Button>
         </form>
+
     );
 }
 

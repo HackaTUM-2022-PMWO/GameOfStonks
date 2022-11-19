@@ -14,7 +14,7 @@ type MatchPersistor interface {
 type Match struct {
 	Id        string    `bson:"id"`
 	Stonk     string    `bson:"security"`
-	SellOrder *Order    `bson:"sellOrder"`
-	BuyOrder  *Order    `bson:"buyOrder"`
+	SellOrder Order     `bson:"sellOrder"`
+	BuyOrder  Order     `bson:"buyOrder"`
 	Time      time.Time `bson:"time"`
 }

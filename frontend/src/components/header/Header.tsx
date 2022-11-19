@@ -1,5 +1,6 @@
 import {Link} from "react-router-dom";
 import {useStonkState} from "../../model/store";
+import SvgSearch from "../../icons/Search";
 
 export function Header() {
     const logo = require('./../../assets/logo.png');
@@ -17,7 +18,7 @@ export function Header() {
                     10:00
                 </h3>}
                 {gameStarted && <div className="flex justify-end">
-                    <Search/>
+                    <SvgSearch/>
                 </div>}
             </div>
         </header>

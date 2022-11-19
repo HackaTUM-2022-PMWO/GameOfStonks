@@ -12,7 +12,7 @@ import App from "../App";
 
 export enum Routes {
   Onboard = "/",
-  Detail = "/detail/:stonkname",
+  Detail = "/detail/:stonkName",
   Home = "/home",
   Lobby = "/lobby",
   Result = "/result",
