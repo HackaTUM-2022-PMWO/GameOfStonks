@@ -9,16 +9,16 @@ export interface ServiceConstructor<ST> extends Function {
 }
 
 export const getClient = <T>(clientClass: ServiceConstructor<T>) => {
-  const transport = getTransport();
+  const transport = getTransport(clientClass.defaultEndpoint);
   return new clientClass(transport);
 };
 
 // utility for creating async transport clients
 export const getTransport =
-  () =>
+  (endpoint: string) =>
   async <T>(method: string, args: any[] = []) => {
     return new Promise<T>((resolve, reject) =>
-      fetch(`${window.location.hostname}/${encodeURIComponent(method)}`, {
+      fetch(`${endpoint}/${encodeURIComponent(method)}`, {
         method: "POST",
         body: JSON.stringify(args),
       })
