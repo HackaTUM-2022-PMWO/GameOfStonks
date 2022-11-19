@@ -7,11 +7,11 @@ tsclientflavor: async
 targets:
   stonks:
     services:
-      /service/stonks: Stonks
+      /service/stonks: StonksService
     package: github.com/hackaTUM/GameOfStonks/services/stonks
     out: ../frontend/src/services/client.ts
     tsrpc:
-      - Stonks
+      - StonksService
 
 mappings:
   github.com/hackaTUM/GameOfStonks/services/stonks:

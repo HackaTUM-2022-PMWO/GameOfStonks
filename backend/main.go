@@ -19,14 +19,14 @@ func main() {
 	// updateOrder
 	//
 
-	service := &stonks.Stonks{
-		Bla: true,
+	service := &stonks.StonksService{
+		// TODO: Add an api
 	}
 
 	server := &http.Server{
 		Addr:     "stonks",
 		ErrorLog: zap.NewStdLog(l),
-		Handler:  stonks.NewDefaultStonksGoTSRPCProxy(service),
+		Handler:  stonks.NewDefaultStonksServiceGoTSRPCProxy(service),
 	}
 	err = server.ListenAndServe()
 	if err != nil {

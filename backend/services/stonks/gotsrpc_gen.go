@@ -12,30 +12,31 @@ import (
 )
 
 const (
-	StonksGoTSRPCProxyHello            = "Hello"
-	StonksGoTSRPCProxyHelloInterface   = "HelloInterface"
-	StonksGoTSRPCProxyHelloNumberMaps  = "HelloNumberMaps"
-	StonksGoTSRPCProxyHelloScalarError = "HelloScalarError"
+	StonksServiceGoTSRPCProxyGetStonkInfo     = "GetStonkInfo"
+	StonksServiceGoTSRPCProxyHello            = "Hello"
+	StonksServiceGoTSRPCProxyHelloInterface   = "HelloInterface"
+	StonksServiceGoTSRPCProxyHelloNumberMaps  = "HelloNumberMaps"
+	StonksServiceGoTSRPCProxyHelloScalarError = "HelloScalarError"
 )
 
-type StonksGoTSRPCProxy struct {
+type StonksServiceGoTSRPCProxy struct {
 	EndPoint string
-	service  *Stonks
+	service  *StonksService
 }
 
-func NewDefaultStonksGoTSRPCProxy(service *Stonks) *StonksGoTSRPCProxy {
-	return NewStonksGoTSRPCProxy(service, "/service/stonks")
+func NewDefaultStonksServiceGoTSRPCProxy(service *StonksService) *StonksServiceGoTSRPCProxy {
+	return NewStonksServiceGoTSRPCProxy(service, "/service/stonks")
 }
 
-func NewStonksGoTSRPCProxy(service *Stonks, endpoint string) *StonksGoTSRPCProxy {
-	return &StonksGoTSRPCProxy{
+func NewStonksServiceGoTSRPCProxy(service *StonksService, endpoint string) *StonksServiceGoTSRPCProxy {
+	return &StonksServiceGoTSRPCProxy{
 		EndPoint: endpoint,
 		service:  service,
 	}
 }
 
 // ServeHTTP exposes your service
-func (p *StonksGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
 		return
 	} else if r.Method != http.MethodPost {
@@ -48,9 +49,35 @@ func (p *StonksGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	callStats, _ := gotsrpc.GetStatsForRequest(r)
 	callStats.Func = funcName
 	callStats.Package = "github.com/hackaTUM/GameOfStonks/services/stonks"
-	callStats.Service = "Stonks"
+	callStats.Service = "StonksService"
 	switch funcName {
-	case StonksGoTSRPCProxyHello:
+	case StonksServiceGoTSRPCProxyGetStonkInfo:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		var (
+			arg_id string
+		)
+		args = []interface{}{&arg_id}
+		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
+			gotsrpc.ErrorCouldNotLoadArgs(w)
+			return
+		}
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		getStonkInfoRet, getStonkInfoRet_1 := p.service.GetStonkInfo(&rw, r, arg_id)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{getStonkInfoRet, getStonkInfoRet_1}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
+	case StonksServiceGoTSRPCProxyHello:
 		var (
 			args []interface{}
 			rets []interface{}
@@ -73,7 +100,7 @@ func (p *StonksGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
-	case StonksGoTSRPCProxyHelloInterface:
+	case StonksServiceGoTSRPCProxyHelloInterface:
 		var (
 			args []interface{}
 			rets []interface{}
@@ -98,7 +125,7 @@ func (p *StonksGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
-	case StonksGoTSRPCProxyHelloNumberMaps:
+	case StonksServiceGoTSRPCProxyHelloNumberMaps:
 		var (
 			args []interface{}
 			rets []interface{}
@@ -121,7 +148,7 @@ func (p *StonksGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
-	case StonksGoTSRPCProxyHelloScalarError:
+	case StonksServiceGoTSRPCProxyHelloScalarError:
 		var (
 			args []interface{}
 			rets []interface{}
