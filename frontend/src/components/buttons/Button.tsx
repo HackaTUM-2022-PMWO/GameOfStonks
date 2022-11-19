@@ -10,7 +10,7 @@ export type ButtonProps = Omit<
 export function Button(props: ButtonProps) {
   return (
     <button
-      className="bg-teal text-white font-medium hover:font-bold ease-in duration-200 drop-shadow py-2 px-4 rounded max-w-fit"
+      className="bg-background text-primary font-medium hover:font-bold ease-in duration-200 drop-shadow py-2 px-4 rounded max-w-fit"
       {...props}
     >
       {props.children}
