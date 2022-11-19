@@ -79,6 +79,16 @@ function Detail() {
         <StonkGraph stonk={stonk} />
       </Card>
       <Card className="mx-0">
+        <h2>Stuff</h2>
+        <ul>
+          {stonk.UserOrders?.map((order, index) => (
+            <li key={index}>
+              {order.UserName} {order.Quantity}
+            </li>
+          ))}
+        </ul>
+      </Card>
+      <Card className="mx-0">
         <h2>Orders</h2>
         <ul>
           {stonk.Orders?.map((order, index) => (
@@ -100,12 +110,12 @@ function Detail() {
         </ul>
       </Card>
       <div className="flex justify-evenly">
-        <RouterButton route={getTradeUrl(stonk.Name, "buy") as Routes}>
+        <RouterButton route={getTradeUrl(stonkName!, "buy") as Routes}>
           <div className="flex items-center gap-4">
             <SvgPlus /> Buy
           </div>
         </RouterButton>
-        <RouterButton route={getTradeUrl(stonk.Name, "sell") as Routes}>
+        <RouterButton route={getTradeUrl(stonkName!, "sell") as Routes}>
           <div className="flex items-center gap-4">
             <SvgMinus />
             Sell
