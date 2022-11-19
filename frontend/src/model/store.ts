@@ -2,7 +2,7 @@ import vanillaCreate from "zustand/vanilla";
 import create from "zustand";
 import { StonksServiceClient } from "../services/stonk-client";
 import { getClient } from "../services/transport";
-import { StonkInfo, User } from "../services/vo-stonks";
+import {StonkInfo, StonkName, User} from "../services/vo-stonks";
 
 export type StonksState = {
   loading: boolean;
@@ -18,7 +18,7 @@ export type StonksModifiers = {
   register: (name: string) => ReturnType<StonksServiceClient["newUser"]>;
 
   getStonkInfo: (
-    stonkName: string
+    stonkName: StonkName
   ) => ReturnType<StonksServiceClient["getStonkInfo"]>;
 };
 
@@ -40,16 +40,14 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
 
       register: (name: string) => {
         return withLoading(client.newUser("name")).then((resp) => {
-          set({ username: name });
-
-          // TODO: store incomming users in lobby
+          set({ username: name, sessionUsers: resp.ret ?? []});
           // TODO: start SSE stream here
           return resp;
         });
         // FIXME: handle server error
       },
 
-      getStonkInfo: (stonk: string) => {
+      getStonkInfo: (stonk: StonkName) => {
         return withLoading(client.getStonkInfo(stonk));
       },
     };
