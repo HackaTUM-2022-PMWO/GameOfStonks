@@ -71,9 +71,8 @@ type User struct {
 }
 
 type StonkInfo struct {
-	ID string
-	// TODO: Add the graph data
-	// History map[]
+	ID     string
+	Prices Prices
 	// TODO: Sort by timestamps!
 	MatchHistory []Match
 	Orders       []Order
@@ -175,6 +174,7 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	// TODO: return the shit
 
 	return StonkInfo{
+		Prices:       s.prices,
 		Orders:       orders,
 		MatchHistory: matches,
 	}, nil
