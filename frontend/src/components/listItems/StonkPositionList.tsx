@@ -14,10 +14,10 @@ export const StonkPositionList = (props: StonkPositionListProps) => {
       <h2>Stonks</h2>
       <ul className="list-none">
         {props.stonks.map((stonk) => (
-          <Link to={getStonkUrl(stonk.ID)}>
+          <Link to={getStonkUrl(stonk.Name)}>
             <li className="flex items-center justify-between text-lg gap-5 py-5 border-t-1">
               <span className="flex items-center gap-1">
-                <span>{stonk.ID}</span>
+                <span>{stonk.Name}</span>
               </span>
               <div className="flex items-center justify-end gap-5">
                 <span className="flex items-center gap-1">
@@ -31,8 +31,8 @@ export const StonkPositionList = (props: StonkPositionListProps) => {
               </div>
             </li>
           </Link>
-          // <li key={stonk.ID} className="p-4 border-t-1">
-          //   {stonk.ID}
+          // <li key={stonk.Name} className="p-4 border-t-1">
+          //   {stonk.Name}
           // </li>
         ))}
         <Link to={getStonkUrl("pencil")}>

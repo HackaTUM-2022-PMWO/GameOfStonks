@@ -64,7 +64,7 @@ function Detail() {
     <div className="p-7">
       <Card className="m-0">
         <div className="flex justify-between">
-          <h2>{stonk.ID}</h2>
+          <h2>{stonk.Name}</h2>
           <h2>
             <CurrencyDisplay
               value={
@@ -81,7 +81,7 @@ function Detail() {
         <ul>
           {stonk.Orders?.map((order, index) => (
             <li key={index}>
-              {order.User} {order.Quantity}
+              {order.UserName} {order.Quantity}
             </li>
           ))}
         </ul>
