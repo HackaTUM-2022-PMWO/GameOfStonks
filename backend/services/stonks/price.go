@@ -7,7 +7,6 @@ type DataPoint struct {
 	Value float64
 }
 
-// TODO: Also hand over some initial values
 func NewPrices(stonksPrices map[string]float64) Prices {
 	out := make(Prices, len(stonksPrices))
 	for name, price := range stonksPrices {

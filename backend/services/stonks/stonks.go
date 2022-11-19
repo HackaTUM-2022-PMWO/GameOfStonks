@@ -29,8 +29,11 @@ type ScalarInPlace string
 type StonksService struct {
 	l *zap.Logger
 
+	// configuration values
 	// all the names of valid stonks
 	stonks []string
+	//
+	startMoney float64
 
 	// Time series data for all the stonks
 	prices Prices
@@ -47,13 +50,16 @@ func NewStonksService(
 	l *zap.Logger,
 	stonks []string,
 	initialStonkPrices map[string]float64,
+	startMoney float64,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
 ) *StonksService {
 	return &StonksService{
-		l:            l.With(zap.String("component", "service")),
+		l: l.With(zap.String("component", "service")),
+
 		stonks:       stonks,
 		prices:       NewPrices(initialStonkPrices),
+		startMoney:   startMoney,
 		orderP:       orderP,
 		matchP:       matchP,
 		waitingUsers: make([]User, 0, 5),
@@ -67,7 +73,7 @@ type User struct {
 	Name string
 
 	// TODO: Deduct the money once an order is placed not when it is executed!
-	money float64
+	Money float64
 }
 
 type StonkInfo struct {
@@ -117,8 +123,9 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	}
 
 	u := User{
-		id:   uuid.New().String(),
-		Name: name,
+		id:    uuid.New().String(),
+		Name:  name,
+		Money: s.startMoney,
 	}
 	s.waitingUsers = append(s.waitingUsers, u)
 
@@ -170,11 +177,13 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	// transform the orders
 	matches := matchsToStonksVo(storeMatches)
 
-	// TODO: Transform the data
-	// TODO: return the shit
+	ts, ok := s.prices[stonk]
+	if !ok {
+		return StonkInfo{}, &Err{"time series not found"}
+	}
 
 	return StonkInfo{
-		TimeSeries:   s.prices[stonk],
+		TimeSeries:   ts,
 		Orders:       orders,
 		MatchHistory: matches,
 	}, nil

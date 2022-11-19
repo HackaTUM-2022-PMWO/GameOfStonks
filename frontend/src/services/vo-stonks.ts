@@ -36,5 +36,6 @@ export interface StonkInfo {
 // github.com/hackaTUM/GameOfStonks/services/stonks.User
 export interface User {
 	Name:string;
+	Money:number;
 }
 // end of common js
