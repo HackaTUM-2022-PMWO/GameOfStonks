@@ -6,6 +6,8 @@ import (
 	time "time"
 
 	"github.com/google/uuid"
+	"github.com/hackaTUM/GameOfStonks/store"
+	"go.uber.org/zap"
 )
 
 type Err struct {
@@ -25,10 +27,28 @@ func (se *ScalarError) Error() string {
 type ScalarInPlace string
 
 type StonksService struct {
+	l *zap.Logger
+
+	orderP store.OrderPersistor
+	matchP store.MatchPersistor
 
 	// users are only held ephemeraly
 	waitingUsers []User
 	activeUsers  []User
+}
+
+func NewStonksService(
+	l *zap.Logger,
+	orderP store.OrderPersistor,
+	matchP store.MatchPersistor,
+) *StonksService {
+	return &StonksService{
+		l:            l,
+		orderP:       orderP,
+		matchP:       matchP,
+		waitingUsers: make([]User, 0, 5),
+		activeUsers:  make([]User, 0, 5),
+	}
 }
 
 type User struct {
@@ -36,6 +56,7 @@ type User struct {
 	// TODO: Probably need to add the ID without leaking it to other users (impersenation!)
 	Name string
 
+	// TODO: Deduct the money once an order is placed not when it is executed!
 	money float64
 }
 
@@ -71,6 +92,9 @@ const (
 )
 
 func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name string) *Err {
+	if r.Method != http.MethodPost {
+		return &Err{"you have to post"}
+	}
 
 	cookie, err := r.Cookie("user")
 	if errors.Is(err, http.ErrNoCookie) {
@@ -110,13 +134,34 @@ func (s *StonksService) StartSession(w http.ResponseWriter, r *http.Request, id 
 }
 
 func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, stonk string) (StonkInfo, *Err) {
+	if r.Method != http.MethodGet {
+		return StonkInfo{}, &Err{"you have to get"}
+	}
+
 	// FIXME: Somehow verify the user
 
 	// TODO: Get the data from the collections
-	//orders, err := s.orderCol.GetOrders(r.Context(), stonk, nil)
+	storeOrders, err := s.orderP.GetOrders(r.Context(), store.Stonk(stonk), nil)
+	if err != nil {
+		return StonkInfo{}, &Err{"unable to retrieve orders"}
+	}
+
+	// transform the orders
+	orders := ordersToStonksVo(storeOrders)
+
+	storeMatches, err := s.matchP.GetMatches(r.Context(), store.Stonk(stonk), nil)
+	if err != nil {
+		return StonkInfo{}, &Err{"unable to retrieve orders"}
+	}
+
+	// transform the orders
+	matches := matchsToStonksVo(storeMatches)
 
 	// TODO: Transform the data
 	// TODO: return the shit
 
-	return StonkInfo{}, nil
+	return StonkInfo{
+		Orders:       orders,
+		MatchHistory: matches,
+	}, nil
 }

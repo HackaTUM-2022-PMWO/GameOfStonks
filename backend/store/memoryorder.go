@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -9,28 +11,20 @@ import (
 )
 
 type MemoryOrderPersistor struct {
-	coll *mongo.Collection
-	l    *zap.Logger
-	// idToOrderMap    map[string]*Order
-	// stonkToOrderMap map[Stonk]*Order
-	// TODO: Probably need:
-	//		- a map to find orders of a specific security
-	//		- a map to
-	//		-
-	//		-
+	col *mongo.Collection
+	l   *zap.Logger
 }
 
-func NewMemoryOrderPersistor(coll *mongo.Collection, l *zap.Logger) *MemoryOrderPersistor {
+func NewMemoryOrderPersistor(col *mongo.Collection, l *zap.Logger) *MemoryOrderPersistor {
 	return &MemoryOrderPersistor{
-		coll: coll,
-		l:    l,
-		// m: make(map[Stonk][]*Match, 5),
+		col: col,
+		l:   l,
 	}
 }
 
 func (p *MemoryOrderPersistor) GetOrders(ctx context.Context, stonk Stonk, user *User) ([]*Order, error) {
 	// Returns all current orders
-	var allOrders []*Order
+	var orders []*Order
 
 	filter := bson.D{}
 	if stonk != "" {
@@ -40,9 +34,12 @@ func (p *MemoryOrderPersistor) GetOrders(ctx context.Context, stonk Stonk, user 
 		filter = append(filter, bson.E{Key: "user.id", Value: user.ID})
 	}
 
-	cur, err := p.coll.Find(ctx, filter)
-	if err != nil {
-		p.l.Error("Unable to get orders", zap.Error(err))
+	cur, err := p.col.Find(ctx, filter)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return []*Order{}, nil
+	} else if err != nil {
+		p.l.Error("unable to get orders", zap.Error(err))
+		return nil, fmt.Errorf("unable to get orders: %s", err)
 	}
 
 	for cur.Next(ctx) {
@@ -50,49 +47,48 @@ func (p *MemoryOrderPersistor) GetOrders(ctx context.Context, stonk Stonk, user 
 		var elem Order
 		err := cur.Decode(&elem)
 		if err != nil {
-			p.l.Error("Unable to decode order", zap.Error(err))
+			p.l.Error("unable to decode order", zap.Error(err))
 		}
-		allOrders = append(allOrders, &elem)
+		orders = append(orders, &elem)
 	}
 
 	cur.Close(ctx)
 
-	return allOrders, err
+	return orders, err
 }
 
 func (p *MemoryOrderPersistor) InsertOrder(ctx context.Context, order Order) error {
 	// Adds a new match to the history
-	_, err := p.coll.InsertOne(ctx, order)
+	_, err := p.col.InsertOne(ctx, order)
 	if err != nil {
-		p.l.Error("Unable to insert new order", zap.Error(err))
+		p.l.Error("unable to insert new order", zap.Error(err))
 	}
 	return err
 }
 
 func (p *MemoryOrderPersistor) UpdateOrder(ctx context.Context, order Order) error {
 	// Update the quantity of given order
-	filter := bson.D{{Key: "ID", Value: order.Id}}
+	filter := bson.D{{Key: "id", Value: order.Id}}
 	update := bson.D{
 		{Key: "$inc", Value: bson.D{
 			{Key: "quantity", Value: order.Quantity},
 		}},
 	}
 
-	_, err := p.coll.UpdateOne(ctx, filter, update)
+	_, err := p.col.UpdateOne(ctx, filter, update)
 	if err != nil {
-		p.l.Error("Unable to update order", zap.Error(err))
+		p.l.Error("unable to update order", zap.Error(err))
 	}
 	// fmt.Printf("Matched %v documents and updated %v documents.\n", updateResult.MatchedCount, updateResult.ModifiedCount)
 	return err
-
 }
 
 func (p *MemoryOrderPersistor) DeleteOrder(ctx context.Context, order Order) error {
-	filter := bson.D{{Key: "ID", Value: order.Id}}
+	filter := bson.D{{Key: "id", Value: order.Id}}
 
-	_, err := p.coll.DeleteMany(context.TODO(), filter)
+	_, err := p.col.DeleteMany(ctx, filter)
 	if err != nil {
-		p.l.Error("Unable to update order", zap.Error(err))
+		p.l.Error("unable to update order", zap.Error(err))
 	}
 	// fmt.Printf("Deleted %v documents in the trainers collection\n", deleteResult.DeletedCount)
 	return err

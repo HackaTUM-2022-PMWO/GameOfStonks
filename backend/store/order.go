@@ -1,14 +1,15 @@
 package store
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type OrderPersistor interface {
-	GetOrderById(id string) (*Order, error)
-	GetOrdersByUser(user User) ([]*Order, error)
-	AddOrder(*Order) error
-	DeleteOrder(id string) error
-	GetOrders() ([]*Order, error)
-	GetMatchHistory([]Match, error)
+	GetOrders(ctx context.Context, stonk Stonk, user *User) ([]*Order, error)
+	InsertOrder(ctx context.Context, order Order) error
+	UpdateOrder(ctx context.Context, order Order) error
+	DeleteOrder(ctx context.Context, order Order) error
 }
 
 type Order struct {
@@ -18,7 +19,7 @@ type Order struct {
 	Price    float64   `bson:"price"`
 	Type     OrderType `bson:"type"`
 	User     User      `bson:"user"`
-	Time 	 time.Time `bson:"time"`
+	Time     time.Time `bson:"time"`
 }
 
 type User struct {
