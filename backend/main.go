@@ -14,17 +14,14 @@ func main() {
 		panic(err)
 	}
 
-	// TODO: Initialize the storage
-	store := store.NewMemoryPersistor(l)
-
 	// getorder
 	// addOrder
 	// removeOrder
 	// updateOrder
 	//
 
-	http.HandleFunc("/createOrder", handler.CreateOrderHandler(l, store))
-	http.HandleFunc("/updateOrder", handler.UpdateOrderHandler(l, store))
+	http.HandleFunc("/createOrder", handler.CreateOrderHandler(l, mongostore))
+	http.HandleFunc("/updateOrder", handler.UpdateOrderHandler(l, mongostore))
 
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
