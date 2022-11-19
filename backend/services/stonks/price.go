@@ -19,11 +19,3 @@ func NewPrices(stonksPrices map[StonkName]float64) Prices {
 	}
 	return out
 }
-
-// TODO: Needs to be called when the matcher returned a new match
-// TODO: Prices can not go below 0
-func updatePrice() {
-
-}
-
-// TODO

@@ -15,8 +15,12 @@ type Matcher struct {
 	ctx    context.Context
 	stonks []string
 
+	tickInterval time.Duration
+
 	orderP store.OrderPersistor
 	matchP store.MatchPersistor
+
+	matchUpdateCh chan<- []*store.Match
 
 	done chan struct{}
 }
@@ -32,16 +36,20 @@ func NewMatcher(
 	l *zap.Logger,
 	ctx context.Context,
 	stonks []string,
+	tickInterval time.Duration,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
+	matchUpdateCh chan<- []*store.Match,
 ) *Matcher {
 	return &Matcher{
-		l:      l.With(zap.String("component", "matcher")),
-		ctx:    ctx,
-		stonks: stonks,
-		orderP: orderP,
-		matchP: matchP,
-		done:   make(chan struct{}, 0),
+		l:             l.With(zap.String("component", "matcher")),
+		ctx:           ctx,
+		stonks:        stonks,
+		tickInterval:  tickInterval,
+		orderP:        orderP,
+		matchP:        matchP,
+		matchUpdateCh: matchUpdateCh,
+		done:          make(chan struct{}),
 	}
 }
 
@@ -52,7 +60,7 @@ func (m *Matcher) Close() {
 }
 
 func (m *Matcher) Start() {
-	ticker := time.NewTicker(2000 * time.Millisecond)
+	ticker := time.NewTicker(m.tickInterval)
 
 	for {
 		select {
@@ -141,6 +149,9 @@ func (m *Matcher) Start() {
 					}
 				}
 			}
+
+			// NOTE: blocking, but the channel is buffered
+			m.matchUpdateCh <- allMatches
 		}
 	}
 }

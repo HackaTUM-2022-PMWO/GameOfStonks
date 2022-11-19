@@ -1,5 +1,7 @@
 import { Line, LineChart, Tooltip } from "recharts";
+import { useStonkState } from "../../model/store";
 import { User } from "../../services/vo-stonks";
+import { PlayerListItem } from "../listItems/PlayerListItem";
 
 // GraphComponent used to represent progress of all users
 export type GraphProps = {};
@@ -51,14 +53,23 @@ const data = [
 ];
 
 export const GlobalGraph = (props: GraphProps) => {
+  const users = useStonkState((state) => state.sessionUsers);
   // TODO: use global state for all users here
 
   return (
-    <LineChart width={500} height={300} data={data}>
-      <Tooltip />
-      <Line type="monotone" dataKey="uv" stroke="#D043AC" strokeWidth={5} />
-      <Line type="monotone" dataKey="pv" stroke="#fff" strokeWidth={5} />
-    </LineChart>
+    <>
+      <LineChart width={500} height={300} data={data}>
+        <Tooltip />
+        <Line type="monotone" dataKey="uv" stroke="#D043AC" strokeWidth={5} />
+        <Line type="monotone" dataKey="pv" stroke="#fff" strokeWidth={5} />
+      </LineChart>
+      <ul>
+        {users?.map((user, index) => (
+          <PlayerListItem key={user.Name + index} value={user.Name} />
+        ))}
+        {/* <PlayerListItem value={"Wlad"} /> */}
+      </ul>
+    </>
   );
 };
 
