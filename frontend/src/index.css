@@ -25,9 +25,8 @@
 }
 
 .card {
-  border-radius: 50px;
-  background: #5F43D0;
-  box-shadow:  -20px 20px 60px #5139b1,
-               20px -20px 60px #6d4def;
-               border: 1px solid rgba(0,0,0,0.1)
+  border-radius: 1.5rem;
+  background: #4C199B;
+  box-shadow:  20px 20px 60px #411584,
+               -20px -20px 60px #571db2;
 }
