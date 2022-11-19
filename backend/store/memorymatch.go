@@ -1,26 +1,63 @@
 package store
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+	"go.mongodb.org/mongo-driver/mongo"
+	"context"
+    "go.mongodb.org/mongo-driver/bson"
+)
 
 type MemoryMatchPersistor struct {
-	l *zap.Logger
-	m map[Security][]Match
+	coll 	mongo.Collection
+	l 		*zap.Logger
+	// m map[Stonk][]*Match
 }
 
-func NewMemoryMatchPersistor(l *zap.Logger) *MemoryMatchPersistor {
+func NewMemoryMatchPersistor(coll mongo.Collection, l *zap.Logger) *MemoryMatchPersistor {
 	return &MemoryMatchPersistor{
+		coll: coll,
 		l: l,
-		m: make(map[Security][]Match, 5),
+		// m: make(map[Stonk][]*Match, 5),
 	}
 }
 
-func (p *MemoryMatchPersistor) AddMatch(*Match) error {
-	// TODO: Implement me
-	return nil
+func (p *MemoryMatchPersistor) AddMatch(ctx context.Context, match *Match) error {
+	// Adds a new match to the history
+	_, err := p.coll.InsertOne(ctx, *match)
+	if err != nil {
+		p.l.Error("Unable to insert new match", zap.Error(err))
+	}
+	return err
 }
 
-// Security is optional -> if nil return all matches
-func (p *MemoryMatchPersistor) GetMatches() ([]*Match, error) {
-	// TODO: Implement me
-	return nil, nil
+func (p *MemoryMatchPersistor) GetMatches(ctx context.Context, stonk Stonk, user *User) ([]*Match, error) {
+	// Returns the history of all matches
+	var allMatches []*Match
+
+	filter := bson.D{}
+	if stonk != "" {
+		filter = append(filter, bson.E{Key: "stonk", Value: string(stonk)})
+	}
+	if user != nil {
+		filter = append(filter, bson.E{Key: "user.id", Value: user.ID})
+	}
+
+	cur, err := p.coll.Find(ctx, filter)
+	if err != nil {
+		p.l.Error("Unable to find matches", zap.Error(err))
+	}
+
+	for cur.Next(ctx) {
+		// create a value into which the single document can be decoded
+		var elem Match
+		err := cur.Decode(&elem)
+		if err != nil {
+			p.l.Error("Unable to decode match", zap.Error(err))
+		}
+		allMatches = append(allMatches, &elem)
+	}
+
+	cur.Close(ctx)
+
+	return allMatches, err
 }

@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
-	"net/http"
+	"time"
 
-	"github.com/hackaTUM/GameOfStonks/handler"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/hackaTUM/GameOfStonks/store"
 	"go.uber.org/zap"
 )
 
@@ -14,14 +19,29 @@ func main() {
 		panic(err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	ordersClient, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://foo:bar@localhost:27017"))
+	// if err != nil { return err }
+	OrdersCollection := ordersClient.Database("stonks").Collection("orders")
+
+	store.NewMemoryOrderPersistor(OrdersCollection, l)
+
 	// getorder
 	// addOrder
 	// removeOrder
 	// updateOrder
 	//
 
-	http.HandleFunc("/createOrder", handler.CreateOrderHandler(l, mongostore))
-	http.HandleFunc("/updateOrder", handler.UpdateOrderHandler(l, mongostore))
+	err = ordersClient.Disconnect(context.TODO())
 
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connection to MongoDB closed.")
+
+	// http.HandleFunc("/createOrder", handler.CreateOrderHandler(l, mongostore))
+	// http.HandleFunc("/updateOrder", handler.UpdateOrderHandler(l, mongostore))
+
+	// log.Fatal(http.ListenAndServe(":8081", nil))
 }
