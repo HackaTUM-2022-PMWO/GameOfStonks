@@ -54,7 +54,7 @@ func (s *StonksService) update() error {
 	}
 }
 
-func userExists(r *http.Request, users map[string]User) (bool, string, error) {
+func userExists(r *http.Request, users map[string]*User) (bool, string, error) {
 	cookie, err := r.Cookie("user")
 	if errors.Is(err, http.ErrNoCookie) {
 		// nothing to do
