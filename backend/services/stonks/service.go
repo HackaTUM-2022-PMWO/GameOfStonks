@@ -41,6 +41,8 @@ type StonksService struct {
 
 	matchUpdateCh <-chan []*store.Match
 
+	msgCh chan interface{}
+
 	// users are only held ephemeraly
 	waitingUsers map[string]User
 	activeUsers  map[string]User
@@ -53,6 +55,7 @@ func NewStonksService(
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
 	matchUpdateCh <-chan []*store.Match,
+	msgCh chan interface{},
 ) *StonksService {
 	return &StonksService{
 		l:             l.With(zap.String("component", "service")),
@@ -61,6 +64,7 @@ func NewStonksService(
 		orderP:        orderP,
 		matchP:        matchP,
 		matchUpdateCh: matchUpdateCh,
+		msgCh:         msgCh,
 
 		waitingUsers: make(map[string]User, 5),
 		activeUsers:  make(map[string]User, 5),
@@ -69,6 +73,7 @@ func NewStonksService(
 
 type User struct {
 	id string // NOTE: private on purpose
+
 	// TODO: Probably need to add the ID without leaking it to other users (impersenation!)
 	Name string
 
