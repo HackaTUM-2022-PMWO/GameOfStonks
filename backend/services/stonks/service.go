@@ -32,7 +32,8 @@ type StonksService struct {
 
 	// configuration values
 	//
-	startMoney float64
+	startMoney  float64
+	startStonks map[StonkName]int
 
 	// Time series data for all the stonks
 	prices Prices
@@ -51,6 +52,7 @@ func NewStonksService(
 	l *zap.Logger,
 	initialStonkPrices map[StonkName]float64,
 	startMoney float64,
+	startStonks map[StonkName]int,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
 	matchUpdateCh <-chan []*store.Match,
@@ -59,6 +61,7 @@ func NewStonksService(
 		l:             l.With(zap.String("component", "service")),
 		prices:        NewPrices(initialStonkPrices),
 		startMoney:    startMoney,
+		startStonks:   startStonks,
 		orderP:        orderP,
 		matchP:        matchP,
 		matchUpdateCh: matchUpdateCh,
@@ -71,8 +74,7 @@ func NewStonksService(
 type User struct {
 	mu sync.Mutex
 
-	id string // NOTE: private on purpose
-	// TODO: Probably need to add the ID without leaking it to other users (impersenation!)
+	id   string // NOTE: private on purpose
 	Name string
 
 	Money         float64
@@ -81,11 +83,8 @@ type User struct {
 	Stonks         map[StonkName]int
 	ReservedStonks map[StonkName]int
 
-	// FIXME: The networth actually needs to be initialized if we also give the user stonks to begin with!
 	NetWorth           float64
 	NetWorthTimeSeries DataPoints
-
-	// TODO: Need to create a users NetWorth (i.e. money current values of stonks)
 }
 
 type Match struct {
@@ -148,6 +147,24 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 		Name:  name,
 		Money: s.startMoney,
 	}
+
+	// set the number of starting stocks
+	for s, i := range s.startStonks {
+		u.Stonks[s] = i
+	}
+
+	// initialize the networth
+	u.NetWorth = u.Money
+	for stonk, num := range u.Stonks {
+		u.NetWorth += float64(num) * s.prices[stonk].LatestValue()
+	}
+
+	// update the latest NetWorthTimeSeries-DataPoints
+	u.NetWorthTimeSeries[0] = DataPoint{
+		Time:  0,
+		Value: u.NetWorth,
+	}
+
 	s.waitingUsers[u.id] = u
 
 	// Set a cookie
@@ -164,6 +181,40 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 		return users[i].Name < users[j].Name
 	})
 	return users, nil
+}
+
+func (s *StonksService) GetUserInfo(w http.ResponseWriter, r *http.Request) (*User, []*User, *Err) {
+	if r.Method != http.MethodPost {
+		return nil, nil, &Err{"you gotta post wlad"}
+	}
+
+	exists, userId, err := userExists(r, s.activeUsers)
+	if err != nil {
+		s.l.Error("unable to read user cookie", zap.Error(err))
+		return nil, nil, &Err{"unable to read user cookie"}
+	} else if !exists {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return nil, nil, &Err{"user is not an active user"}
+	}
+
+	user, ok := s.activeUsers[userId]
+	if !ok {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return nil, nil, &Err{"user is not an active user"}
+	}
+
+	otherUsers := make([]*User, 0, len(s.activeUsers)-1)
+	for _, u := range s.waitingUsers {
+		if u.id != userId {
+			otherUsers = append(otherUsers, u)
+		}
+	}
+
+	// sort the users
+	sort.Slice(otherUsers, func(i, j int) bool {
+		return otherUsers[i].Name < otherUsers[j].Name
+	})
+	return user, otherUsers, nil
 }
 
 // TODO: Actually this should be an SSE
@@ -563,9 +614,6 @@ func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd 
 		return nil
 	}
 }
-
-// TODO: Add functions for:
-// - GetUserInfo (users current portfolie + others)
 
 // TODO: Add SSE for:
 // - StartSession(?)

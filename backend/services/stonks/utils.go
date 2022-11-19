@@ -5,7 +5,6 @@ import (
 	http "net/http"
 )
 
-// TODO: Need to update player NetWorth
 func (s *StonksService) update() error {
 	// drain the updates chanel until it is empty
 	updated := false
@@ -22,6 +21,18 @@ func (s *StonksService) update() error {
 					Value: value,
 				})
 			}
+
+			// Add a new entry to the users NetWorthTimeSeries-DataPoints
+			for userId, user := range s.activeUsers {
+				user.mu.Lock()
+				user.NetWorthTimeSeries = append(user.NetWorthTimeSeries, DataPoint{
+					Time:  user.NetWorthTimeSeries.LatestTime() + 1,
+					Value: user.NetWorthTimeSeries.LatestValue(),
+				})
+				s.activeUsers[userId] = user
+				user.mu.Unlock()
+			}
+
 			// update the value to the actual new on if there is a match for this stock
 			for _, match := range matches {
 				stonkName := StonkName(match.Stonk)
@@ -31,13 +42,17 @@ func (s *StonksService) update() error {
 
 				// update the users stock position
 				for userId, user := range s.activeUsers {
-					if userId == match.BuyOrder.User.ID {				// if buyer
+					user.mu.Lock()
+					if userId == match.BuyOrder.User.ID { // if buyer
 						user.Stonks[stonkName] += match.Quantity
 						user.ReservedStonks[stonkName] -= match.Quantity
-						user.ReservedMoney += float64(match.Quantity) * s.prices[stonkName].LatestValue()
-					} else if userId != match.SellOrder.User.ID {		// elif seller
-						user.Stonks[stonkName] -= 1
+						user.ReservedMoney -= float64(match.Quantity) * match.BuyOrder.Price
+						user.Money -= float64(match.Quantity) * match.BuyOrder.Price
+					} else if userId != match.SellOrder.User.ID { // elif seller
+						user.Stonks[stonkName] -= match.Quantity
+						user.Money += float64(match.Quantity) * match.SellOrder.Price
 					} else {
+						user.mu.Unlock()
 						continue
 					}
 
@@ -47,11 +62,11 @@ func (s *StonksService) update() error {
 						user.NetWorth += float64(num) * s.prices[stonk].LatestValue()
 					}
 
-					// update the NetWorthTimeSeries-DataPoints
-					nextD := DataPoint{s.prices[stonkName].LatestTime(), user.NetWorth}
-					user.NetWorthTimeSeries = append(user.NetWorthTimeSeries, nextD)
+					// update the latest NetWorthTimeSeries-DataPoints
+					user.NetWorthTimeSeries[len(user.NetWorthTimeSeries)-1].Value = user.NetWorth
 
 					s.activeUsers[userId] = user
+					user.mu.Unlock()
 				}
 			}
 
