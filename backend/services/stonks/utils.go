@@ -180,8 +180,10 @@ func (s *StonksService) updateBots() {
 	// this can easily run in the background so the main service is not blocked too long
 	go func() {
 		for _, b := range s.bots {
-			context.WithTimeout(context.Background(), 2*time.Minute)
-			b.Execute(ctx, prices)
+			ctx, err := context.WithTimeout(context.Background(), 2*time.Minute)
+			if err == nil {
+				b.Execute(ctx, prices)
+			}
 		}
 	}()
 }
