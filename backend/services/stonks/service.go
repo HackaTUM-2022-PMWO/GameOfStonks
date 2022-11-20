@@ -191,8 +191,10 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 
 	// TODO: Maybe change the condition before the presentation
 	if len(s.waitingUsers) >= 2 {
-		time.Sleep(100 * time.Millisecond)
-		s.startSession()
+		go func() {
+			time.Sleep(500 * time.Millisecond)
+			s.startSession()
+		}()
 	}
 
 	return users, nil
