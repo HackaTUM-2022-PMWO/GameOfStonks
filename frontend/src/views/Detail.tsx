@@ -155,16 +155,22 @@ function Detail() {
           </div>
         </RouterButton>
       </div>
-      {stonk.UserOrders && stonk.UserOrders.length > 0 && (
-        <Card headline="Pending Orders" className="mx-0">
-          <h2>Your Orders</h2>
-          <OrderList orders={stonk.UserOrders} editable />
-          <br />
-          <br />
-          <h2>All Orders</h2>
-          <OrderList orders={stonk.Orders ?? []} />
-        </Card>
-      )}
+      <Card headline="Pending Orders" className="mx-0">
+        {stonk.UserOrders && stonk.UserOrders.length > 0 && (
+          <>
+            <h2>Your Orders</h2>
+            <OrderList orders={stonk.UserOrders} editable />
+            <br />
+            <br />
+          </>
+        )}
+        {stonk.Orders && stonk.Orders.length > 0 && (
+          <>
+            <h2>All Orders</h2>
+            <OrderList orders={stonk.Orders ?? []} />
+          </>
+        )}
+      </Card>
 
       {stonk.MatchHistory && stonk.MatchHistory.length > 0 && (
         <StonkHistoryList stonk={stonk} />

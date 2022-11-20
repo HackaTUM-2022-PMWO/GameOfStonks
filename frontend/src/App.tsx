@@ -6,12 +6,7 @@ import { useEffect } from "react";
 import { SpinnerOverlay } from "./components/spinner/Spinner";
 
 function App() {
-  const update = useStonkState((state) => state.updateState);
   const isLoading = useStonkState((state) => state.loading);
-
-  useEffect(() => {
-    update();
-  }, []);
 
   return (
     <div>

@@ -8,7 +8,7 @@ function Lobby() {
     <div className="flex flex-col justify-center items-center h-screen space-y-5">
       <h1 className="text-5xl">Waiting for more traders</h1>
       <p>Trading will begin soon</p>
-      <h2>{players == null ? "0" : "" + players.length} of 5</h2>
+      <h2>{players == null ? "0" : "" + players.length} of 2</h2>
 
       {players != null && (
         <ul className="space-y-3 text-3xl">

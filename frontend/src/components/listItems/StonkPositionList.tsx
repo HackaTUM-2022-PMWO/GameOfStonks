@@ -24,7 +24,7 @@ export const StonkPositionList = (props: StonkPositionListProps) => {
             img = path[0].img;
           }
           return (
-            <Link to={getStonkUrl(stonk)}>
+            <Link key={stonk} to={getStonkUrl(stonk)}>
               <li className="flex items-center justify-between text-md gap-5 py-5 border-t-1">
                 <div className="flex flex-row gap-6">
                   <img className="w-12 h-12" src={img} alt={"image"} />

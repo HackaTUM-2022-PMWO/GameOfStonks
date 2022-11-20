@@ -24,6 +24,9 @@ export type StonksState = {
   sessionUsers?: User[];
   gameStarted: boolean;
   stonkInfos?: StonkInfo[];
+
+  // used to retrigger rendering
+  renderKey: number;
 };
 
 const handleAuthError = (err: Err) => {
@@ -85,6 +88,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
     };
 
     return {
+      renderKey: 0,
       roundDuration: 0,
 
       username: undefined,
@@ -138,15 +142,12 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
                 console.log("game over");
               } else if (payload.reload) {
                 get().updateState();
-                clearInterval(interval as any);
               }
             };
             evtSource.onopen = (evt) => {
               console.log("channel opened");
             };
             evtSource.onerror = (evt) => console.error(evt);
-
-            // TODO: start SSE stream here
             return resp;
           })
         );
@@ -226,6 +227,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
                 return;
               }
               set({
+                renderKey: ++get().renderKey,
                 sessionUsers:
                   (users?.filter((user) => user != null) as any) ?? [],
               });

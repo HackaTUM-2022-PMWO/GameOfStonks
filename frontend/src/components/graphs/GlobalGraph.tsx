@@ -101,6 +101,7 @@ export const GlobalGraph = (props: GraphProps) => {
         />
         {users?.map((u, idx) => (
           <Line
+            key={idx}
             type="monotone"
             dataKey="Value"
             data={u.NetWorthTimeSeries}
