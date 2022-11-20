@@ -148,9 +148,12 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	}
 
 	u := &User{
-		id:    uuid.New().String(),
-		Name:  name,
-		Money: s.startMoney,
+		id:                 uuid.New().String(),
+		Name:               name,
+		Money:              s.startMoney,
+		Stonks:             make(map[StonkName]int, len(allStonkNames)),
+		ReservedStonks:     make(map[StonkName]int, len(allStonkNames)),
+		NetWorthTimeSeries: make(DataPoints, 0, 1000),
 	}
 
 	// set the number of starting stocks
@@ -165,17 +168,12 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	}
 
 	// update the latest NetWorthTimeSeries-DataPoints
-	u.NetWorthTimeSeries[0] = DataPoint{
+	u.NetWorthTimeSeries = append(u.NetWorthTimeSeries, DataPoint{
 		Time:  0,
 		Value: u.NetWorth,
-	}
+	})
 
 	s.waitingUsers[u.id] = u
-
-	// TODO: Maybe change the condition before the presentation
-	if len(s.waitingUsers) >= 2 {
-		s.startSession()
-	}
 
 	// Set a cookie
 	cookie := &http.Cookie{Name: "user", Value: u.id, Expires: time.Now().Add(time.Hour * 24 * 7)}
@@ -190,6 +188,13 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	sort.Slice(users, func(i, j int) bool {
 		return users[i].Name < users[j].Name
 	})
+
+	// TODO: Maybe change the condition before the presentation
+	if len(s.waitingUsers) >= 2 {
+		time.Sleep(100 * time.Millisecond)
+		s.startSession()
+	}
+
 	return users, nil
 }
 
