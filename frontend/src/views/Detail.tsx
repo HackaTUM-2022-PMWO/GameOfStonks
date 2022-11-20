@@ -11,7 +11,7 @@ import SvgMinus from "../icons/Minus";
 import SvgPlus from "../icons/Plus";
 import { useStonkState } from "../model/store";
 import { getTradeUrl, Routes } from "../router/router";
-import { Order, StonkInfo, StonkName } from "../services/vo-stonks";
+import { Order, OrderType, StonkInfo, StonkName } from "../services/vo-stonks";
 import SvgEdit from "../icons/Edit";
 import { StonkHistoryList } from "../components/listItems/StonkHistoryList";
 import { StonksAssetsMatch } from "../assets/StonksAssetsMatch";
@@ -37,10 +37,15 @@ export const OrderList = (props: { orders: Order[]; editable?: boolean }) => {
         >
           <span className="flex gap-2 items-center">
             <PlayerTag idx={index} value={order.UserName} />
-            ordered <b> {order.Quantity} </b>
+            {order.OrderType === OrderType.Buy ? (
+              <span className="text-green-400">bought</span>
+            ) : (
+              <span className="text-red-400">sold</span>
+            )}{" "}
+            <b> {order.Quantity} </b>
             for
             <span>
-              {order.Price}
+              {formatter.format(order.Price)}
               <Currency size={2} />
               each
             </span>

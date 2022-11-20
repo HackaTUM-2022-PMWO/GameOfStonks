@@ -33,7 +33,9 @@ export const StonkPositionList = (props: StonkPositionListProps) => {
                   </h3>
                 </div>
                 <div className="flex items-center justify-end gap-5">
-                  <span className="text-lg">{number}</span>{" "}
+                  <span className="text-lg">
+                    {number === -1 ? null : number}
+                  </span>{" "}
                   <SvgChevronRight className="opacity-40" />
                 </div>
               </li>

@@ -56,7 +56,10 @@ function Search() {
         <StonkPositionList
           stonks={Object.values(StonkName)
             .filter((val) => val.valueOf().includes(query) && val !== "")
-            .reduce((acc, entry) => (acc[entry] = 0), {} as any)}
+            .reduce((acc, entry) => {
+              acc[entry] = -1;
+              return acc;
+            }, {} as any)}
         />
       </Card>
     </div>
