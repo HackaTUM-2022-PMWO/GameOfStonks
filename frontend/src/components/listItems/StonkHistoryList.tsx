@@ -5,7 +5,7 @@ import {StonkInfo} from "../../services/vo-stonks";
 export function StonkHistoryList(props: {stonk : StonkInfo}){
     return (
         <Card className="mx-0">
-            <h2>History</h2>
+            <h2>Order History</h2>
             <ul>
                 {props.stonk.MatchHistory?.map((order, index) => (
                     <li key={index} className="flex ">

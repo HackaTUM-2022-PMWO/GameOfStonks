@@ -13,6 +13,8 @@ import {
 import { Routes } from "../router/router";
 
 export type StonksState = {
+  roundDuration: number;
+
   loading: boolean;
   // set after successfull regoster/newUser
   // removed after lobby closed or when 401 returned from any service call
@@ -73,6 +75,8 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
     };
 
     return {
+      roundDuration: 0,
+
       username: undefined,
       stockDetails: [],
       gameStarted: false,
@@ -82,6 +86,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
         return withLoading(client.newUser(name)).then((resp) => {
           set({ username: name, sessionUsers: (resp.ret as any) ?? [] });
 
+          // start SSE handling
           const evtSource = new EventSource("/stream");
           evtSource.onmessage = (evt) => {
             const payload = JSON.parse(evt.data) as {
@@ -95,6 +100,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
                 gameStarted: true,
                 currentUser: payload.start.find((u) => u.Name === name),
                 sessionUsers: payload.start,
+                // roundDuration: payloa
               });
               navigate(Routes.StartStocks);
               console.log("staring game");

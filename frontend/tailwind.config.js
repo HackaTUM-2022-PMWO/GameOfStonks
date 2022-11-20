@@ -5,11 +5,11 @@ module.exports = {
     extend: {
       colors: {
         background: "#46178F",
-        foreground: "#FF9551",
+        foreground: "#3F1481",
         accent: "#FF9551",
         accent2: "#864BBF",
-        primary: "#EEE",
-        secondary: "#2f2b2b",
+        primary: "#E9D2FF",
+        secondary: "#250049",
       },
       boxShadow: {},
     },

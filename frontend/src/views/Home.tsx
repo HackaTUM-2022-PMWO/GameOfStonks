@@ -32,10 +32,12 @@ function Home() {
           {/* </ResponsiveContainer> */}
         </div>
       </Card>
-      <Card>
-        <StonkPositionList stonks={user?.Stonks ?? ({} as any)} />
-      </Card>
-      <Card>
+      {user?.ReservedStonks && Object.entries(user?.ReservedStonks).length > 0 && (
+        <Card headline="Your pending orders">
+          <StonkPositionList stonks={user?.ReservedStonks ?? ({} as any)} />
+        </Card>
+      )}
+      <Card headline="Your portfolio" className="py-0">
         <StonkPositionList stonks={user?.Stonks ?? ({} as any)} />
       </Card>
     </>

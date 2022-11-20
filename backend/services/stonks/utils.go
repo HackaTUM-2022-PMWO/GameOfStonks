@@ -158,9 +158,10 @@ func (s *StonksService) startSession() {
 	})
 
 	state := State{
-		Start:  users,
-		Reload: false, // the front-end will start the game so no need to reload the current page
-		Finish: nil,
+		Start:         users,
+		RoundDuration: s.roundDuration,
+		Reload:        false, // the front-end will start the game so no need to reload the current page
+		Finish:        nil,
 	}
 	s.sseCh <- state
 }
