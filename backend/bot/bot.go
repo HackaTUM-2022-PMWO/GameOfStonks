@@ -13,7 +13,7 @@ import (
 )
 
 type Bot interface {
-	Execute(map[string]float64)
+	Execute(context.Context, map[string]float64)
 }
 
 type GoodBot struct {
