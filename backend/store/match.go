@@ -7,7 +7,7 @@ import (
 
 type MatchPersistor interface {
 	AddMatch(ctx context.Context, match *Match) error
-	GetMatches(ctx context.Context, stonk string, user *User) ([]*Match, error)
+	GetMatches(ctx context.Context, stonk string) ([]*Match, error)
 }
 
 // TODO: Create a new order if it was only partially matched
@@ -17,5 +17,5 @@ type Match struct {
 	SellOrder Order     `bson:"sellOrder"`
 	BuyOrder  Order     `bson:"buyOrder"`
 	Time      time.Time `bson:"time"`
-	Quantity  int		`bson:"quantity"`
+	Quantity  int       `bson:"quantity"`
 }

@@ -212,7 +212,7 @@ func main() {
 	match := matcher.NewMatcher(
 		l,
 		ctx,
-		stonkNames,
+		stonkNames, // ATTENTION: This actually depends on the initialStonkPrices
 		matcherUpdateInterval,
 		orderP,
 		matchP,
