@@ -8,6 +8,7 @@ import (
 
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
 	"github.com/hackaTUM/GameOfStonks/store"
 	"go.uber.org/zap"
@@ -78,9 +79,11 @@ func NewBadBot(
 }
 
 func (b *GoodBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
+	b.l.Debug("good bot execute", zap.String("dump", spew.Sdump(stonkPrices)))
 	for stonk, stonkPrice := range stonkPrices {
 		if rand.Float64() < b.randBuyProb {
-			b.orderP.InsertOrder(ctx, store.Order{
+			b.l.Debug("good bot buy insert")
+			err := b.orderP.InsertOrder(ctx, store.Order{
 				Id:       uuid.New().String(),
 				Stonk:    stonk,
 				Quantity: int(math.Max(1, rand.Float64()*10.)),
@@ -89,9 +92,12 @@ func (b *GoodBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
 				User:     b.user,
 				Time:     time.Now(),
 			})
-			return
+			if err != nil {
+				b.l.Error("good bot unable to insert buy")
+			}
 		} else if rand.Float64() < b.randSellProb {
-			b.orderP.InsertOrder(ctx, store.Order{
+			b.l.Debug("good bot sell insert")
+			err := b.orderP.InsertOrder(ctx, store.Order{
 				Id:       uuid.New().String(),
 				Stonk:    stonk,
 				Quantity: int(math.Max(1, rand.Float64()*10.)),
@@ -100,16 +106,20 @@ func (b *GoodBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
 				User:     b.user,
 				Time:     time.Now(),
 			})
-			return
+			if err != nil {
+				b.l.Error("good bot unable to insert sell")
+			}
 		}
 	}
 
 }
 
 func (b *BadBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
+	b.l.Debug("bad bot execute", zap.String("dump", spew.Sdump(stonkPrices)))
 	for stonk, stonkPrice := range stonkPrices {
 		if rand.Float64() < b.randBuyProb {
-			b.orderP.InsertOrder(ctx, store.Order{
+			b.l.Debug("bad bot buy insert")
+			err := b.orderP.InsertOrder(ctx, store.Order{
 				Id:       uuid.New().String(),
 				Stonk:    stonk,
 				Quantity: int(math.Max(1, rand.Float64()*10.)),
@@ -118,9 +128,12 @@ func (b *BadBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
 				User:     b.user,
 				Time:     time.Now(),
 			})
-			return
+			if err != nil {
+				b.l.Error("bad bot unable to insert buy")
+			}
 		} else if rand.Float64() < b.randSellProb {
-			b.orderP.InsertOrder(ctx, store.Order{
+			b.l.Debug("bad bot sell insert")
+			err := b.orderP.InsertOrder(ctx, store.Order{
 				Id:       uuid.New().String(),
 				Stonk:    stonk,
 				Quantity: int(math.Max(1, rand.Float64()*10.)),
@@ -129,7 +142,9 @@ func (b *BadBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
 				User:     b.user,
 				Time:     time.Now(),
 			})
-			return
+			if err != nil {
+				b.l.Error("bad bot unable to insert sell")
+			}
 		}
 	}
 }
