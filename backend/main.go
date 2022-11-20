@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 	"net/http"
 
+	"github.com/hackaTUM/GameOfStonks/bot"
 	"github.com/hackaTUM/GameOfStonks/matcher"
 	"github.com/hackaTUM/GameOfStonks/services/stonks"
 	"github.com/hackaTUM/GameOfStonks/store"
@@ -221,6 +223,15 @@ func main() {
 
 	defer match.Close()
 
+	// create some bots so the market has some actual movement
+	bots := make([]bot.Bot, 0, 40)
+	for i := 0; i < 30; i++ {
+		bots = append(bots, bot.NewGoodBot(l, 0.15, 0.1, rand.Float64()*0.05, orderP))
+	}
+	for i := 0; i < 10; i++ {
+		bots = append(bots, bot.NewBadBot(l, 0.15, 0.1, rand.Float64()*0.05, orderP))
+	}
+
 	service := stonks.NewStonksService(
 		l,
 		initialStonkPrices,
@@ -229,6 +240,7 @@ func main() {
 		roundDuration,
 		orderP,
 		matchP,
+		bots,
 		matchUpdateCh,
 		broadcastCh,
 	)
