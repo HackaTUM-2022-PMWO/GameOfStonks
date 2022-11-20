@@ -1,16 +1,14 @@
 import vanillaCreate from "zustand/vanilla";
 import create from "zustand";
 import { StonksServiceClient } from "../services/stonk-client";
-import {} from "../services/vo-stonks";
+import { Err, Match } from "../services/vo-stonks";
 import { getClient } from "../services/transport";
 import {
-  OrderType,
   PlaceOrderCmd,
   StonkInfo,
   StonkName,
   User,
 } from "../services/vo-stonks";
-import userEvent from "@testing-library/user-event";
 import { Routes } from "../router/router";
 
 export type StonksState = {
@@ -23,15 +21,25 @@ export type StonksState = {
   stonkInfos?: StonkInfo[];
 };
 
+const handleAuthError = (err: Err) => {
+  if (err.message == "user is not an active user") {
+    window.location.href = "/";
+  }
+};
+
 export type StonksModifiers = {
   register: (
     name: string,
     navigate: (url: string) => void
   ) => ReturnType<StonksServiceClient["newUser"]>;
 
+  updateState: () => void;
+
   getStonkInfo: (
     stonkName: StonkName
   ) => ReturnType<StonksServiceClient["getStonkInfo"]>;
+
+  getStonksHistory: () => Promise<void>;
 
   placeOrder: (
     cmd: PlaceOrderCmd
@@ -48,6 +56,17 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
       return promise;
     };
 
+    const withHandleAuthError = <T, E extends Err>(
+      promise: Promise<{ ret: T; ret_1: E | null }>
+    ) => {
+      return promise.then((result) => {
+        if (result.ret_1) {
+          handleAuthError(result.ret_1);
+        }
+        return result;
+      });
+    };
+
     return {
       username: undefined,
       stockDetails: [],
@@ -60,12 +79,22 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
 
           const evtSource = new EventSource("/stream");
           evtSource.onmessage = (evt) => {
-            const payload = JSON.parse(evt.data);
+            const payload = JSON.parse(evt.data) as {
+              reload?: boolean;
+              start?: User[];
+              finish?: User[];
+            };
             console.log("msg", payload);
 
             // ready to play baby
             if (payload.start) {
+              set({ gameStarted: true });
               navigate(Routes.StartStocks);
+            } else if (payload.finish) {
+              set({ gameStarted: false });
+              navigate(Routes.Result);
+            } else if (payload.reload) {
+              get().updateState();
             }
           };
           evtSource.onopen = (evt) => {
@@ -80,7 +109,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
       },
 
       getStonkInfo: (stonk: StonkName) => {
-        return withLoading(client.getStonkInfo(stonk));
+        return withLoading(withHandleAuthError(client.getStonkInfo(stonk)));
       },
 
       placeOrder: (cmd: PlaceOrderCmd) => {
@@ -89,10 +118,34 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
         });
       },
 
+      getStonksHistory: async () => {
+        const resp = await Promise.all(
+          Object.values(StonkName).map((stonkName) =>
+            client.getStonkInfo(stonkName)
+          )
+        );
+
+        for (let r of resp) {
+          if (r.ret_1 != null) {
+            handleAuthError(r.ret_1);
+            return;
+          }
+        }
+
+        set({
+          stonkInfos: resp.map((resp) => {
+            return resp.ret;
+          }),
+        });
+      },
+
       updateState: () => {
         withLoading(client.getUserInfo()).then(
           ({ ret: user, ret_1: users, ret_2: err }) => {
-            // if (err == nil)
+            set({
+              sessionUsers:
+                (users?.filter((user) => user != null) as any) ?? [],
+            });
           }
         );
       },
