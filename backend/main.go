@@ -38,7 +38,7 @@ var (
 	}
 
 	startMoney    float64       = 1000.0
-	roundDuration time.Duration = 2 * time.Minute
+	roundDuration time.Duration = 200 * time.Minute
 
 	matcherUpdateInterval time.Duration = time.Millisecond * 2000
 )

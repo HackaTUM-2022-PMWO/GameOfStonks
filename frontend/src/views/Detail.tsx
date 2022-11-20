@@ -15,6 +15,7 @@ import { getTradeUrl, Routes } from "../router/router";
 import { StonkInfo, StonkName } from "../services/vo-stonks";
 import SvgEdit from "../icons/Edit";
 import { StonkHistoryList } from "../components/listItems/StonkHistoryList";
+import { StonksAssetsMatch } from "../assets/StonksAssetsMatch";
 
 const formatter = new Intl.NumberFormat("en-IN", {
   maximumSignificantDigits: 3,
@@ -24,9 +25,9 @@ const formatter = new Intl.NumberFormat("en-IN", {
 
 export const CurrencyDisplay = (props: { value: number }) => {
   return (
-    <>
+    <span className="inline-flex items-center gap-2">
       {formatter.format(props.value)} <Currency />
-    </>
+    </span>
   );
 };
 
@@ -64,42 +65,44 @@ function Detail() {
     return <Spinner />;
   }
 
+  const img = StonksAssetsMatch.filter((elem) => elem.stonk === stonkName)?.[0]
+    .img;
+
   return (
     <Container>
-      <Card className="m-0">
-        <div className="flex justify-between">
-          <h2>{stonk.Name}</h2>
-          <h2>
-            <CurrencyDisplay
-              value={
-                stonk.TimeSeries?.[stonk.TimeSeries?.length - 1].Value ?? 0.0
-              }
-            />
-          </h2>
-        </div>
+      <div className="flex items-center justify-start ">
+        {img && <img className="w-36 h-36" src={img} alt={"image"} />}
+        <h1>{stonkName}</h1>
+      </div>
+
+      <Card className="mx-0">
+        <h2 className="text-3xl text-right">
+          <CurrencyDisplay
+            value={
+              stonk.TimeSeries?.[stonk.TimeSeries?.length - 1].Value ?? 0.0
+            }
+          />
+        </h2>
         <StonkGraph stonk={stonk} />
       </Card>
       <Card className="mx-0">
-        <h2>Stuff</h2>
+        <h2>Pending Orders</h2>
         <ul>
           {stonk.UserOrders?.map((order, index) => (
-            <li key={index}>
-              {order.UserName} {order.Quantity}
+            <li className="py-5 border-b-foreground border-b-2" key={index}>
+              @{order.UserName} ordered {order.Quantity}
             </li>
           ))}
-        </ul>
-      </Card>
-      <Card className="mx-0">
-        <h2>Orders</h2>
-        <ul>
           {stonk.Orders?.map((order, index) => (
-            <li key={index}>
+            <li key={index} className="py-5 border-b-foreground border-b-2">
               {order.UserName} {order.Quantity}
             </li>
           ))}
         </ul>
       </Card>
-      <StonkHistoryList stonk={stonk} />
+      {stonk.MatchHistory && stonk.MatchHistory.length > 0 && (
+        <StonkHistoryList stonk={stonk} />
+      )}
       <div className="flex justify-evenly">
         <RouterButton
           className="py-4 px-8"
@@ -108,15 +111,6 @@ function Detail() {
           <div className="flex items-center gap-4">
             <SvgMinus />
             Sell
-          </div>
-        </RouterButton>
-        <RouterButton
-          className="py-4 px-8"
-          route={getTradeUrl(stonkName!, "delete") as Routes}
-        >
-          <div className="flex items-center gap-4">
-            <SvgEdit />
-            Delete
           </div>
         </RouterButton>
         <RouterButton

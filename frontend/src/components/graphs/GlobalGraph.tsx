@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { BarChart, Line, LineChart, Tooltip } from "recharts";
 import { useStonkState } from "../../model/store";
 import { User } from "../../services/vo-stonks";
@@ -54,16 +55,45 @@ const data = [
 
 export const GlobalGraph = (props: GraphProps) => {
   const users = useStonkState((state) => state.sessionUsers);
+
+  const [data, setData] = useState<any[]>();
+
+  useEffect(() => {
+    if (!users || users.length === 0) {
+      setData([]);
+      return;
+    }
+
+    let data = users[0].NetWorthTimeSeries?.map((entry, edx) => {
+      const obj = {
+        time: entry.Time,
+      } as any;
+
+      users.forEach((u, idx) => (obj[idx] = u.NetWorthTimeSeries?.[edx].Value));
+
+      return obj;
+    });
+
+    // add fake entry for visuals
+    let fakeEntry = {
+      time: 0,
+    } as any;
+    users.forEach((u, idx) => (fakeEntry[idx] = 0));
+    data = [fakeEntry, ...(data ?? [])];
+
+    setData(data);
+  }, [users]);
+
   // TODO: use global state for all users here
 
   return (
     <>
-      <LineChart width={500} height={300} data={data}>
+      <LineChart width={400} height={300} data={data}>
         <Tooltip />
         {users?.map((u, idx) => (
           <Line
             type="monotone"
-            dataKey="uv"
+            dataKey={idx}
             stroke={colorsForIndex[idx]}
             strokeWidth={5}
           />

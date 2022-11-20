@@ -17,6 +17,7 @@ import { useStonkState } from "../model/store";
 
 function Home() {
   const user = useStonkState((state) => state.currentUser);
+  const stonks = useStonkState((state) => state.stonkInfos);
 
   return (
     <>
@@ -26,13 +27,16 @@ function Home() {
           <Currency />
         </h2>
         <div className="max-w max-h">
-          {/* <ResponsiveContainer width="100%" height="100%"> */}
+          {/* <ResponsiveContainer width="100%" height={300}> */}
           <GlobalGraph />
           {/* </ResponsiveContainer> */}
         </div>
       </Card>
       <Card>
-        <StonkPositionList stonks={[]} />
+        <StonkPositionList stonks={user?.Stonks ?? ({} as any)} />
+      </Card>
+      <Card>
+        <StonkPositionList stonks={user?.Stonks ?? ({} as any)} />
       </Card>
     </>
   );
