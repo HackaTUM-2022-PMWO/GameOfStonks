@@ -89,7 +89,15 @@ export const GlobalGraph = (props: GraphProps) => {
   return (
     <>
       <LineChart width={400} height={300} data={data}>
-        <Tooltip />
+        <Tooltip
+          wrapperStyle={{
+            outline: "none",
+            border: "none",
+          }}
+          contentStyle={{
+            backgroundColor: "#250049",
+          }}
+        />
         {users?.map((u, idx) => (
           <Line
             type="monotone"

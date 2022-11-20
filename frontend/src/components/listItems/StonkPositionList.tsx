@@ -14,6 +14,10 @@ export const StonkPositionList = (props: StonkPositionListProps) => {
     <>
       <ul className="list-none">
         {Object.entries(props.stonks).map(([stonk, number], index, array) => {
+          if (number === 0) {
+            return null;
+          }
+
           let img, path;
           if (typeof stonk === "string") {
             path = StonksAssetsMatch.filter((elem) => elem.stonk === stonk);
@@ -29,12 +33,7 @@ export const StonkPositionList = (props: StonkPositionListProps) => {
                   </h3>
                 </div>
                 <div className="flex items-center justify-end gap-5">
-                  <span className="flex items-center gap-1">
-                    <span className="opacity-40">
-                      <X />
-                    </span>
-                    <span>{number}</span>
-                  </span>
+                  <span className="text-lg">{number}</span>{" "}
                   <SvgChevronRight className="opacity-40" />
                 </div>
               </li>

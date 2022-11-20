@@ -1,7 +1,7 @@
 import vanillaCreate from "zustand/vanilla";
 import create from "zustand";
 import { StonksServiceClient } from "../services/stonk-client";
-import { Err } from "../services/vo-stonks";
+import { Err, Order } from "../services/vo-stonks";
 import { getClient } from "../services/transport";
 import { persist } from "zustand/middleware";
 import {
@@ -11,6 +11,7 @@ import {
   User,
 } from "../services/vo-stonks";
 import { Routes } from "../router/router";
+import { toast } from "react-toastify";
 
 export type StonksState = {
   roundDuration: number;
@@ -40,7 +41,7 @@ export type StonksModifiers = {
     navigate: (url: string) => void
   ) => ReturnType<StonksServiceClient["newUser"]>;
 
-  updateState: () => void;
+  updateState: () => Promise<void>;
 
   getStonkInfo: (
     stonkName: StonkName
@@ -51,6 +52,9 @@ export type StonksModifiers = {
   placeOrder: (
     cmd: PlaceOrderCmd
   ) => ReturnType<StonksServiceClient["placeOrder"]>;
+
+  deleteOrder: (order: Order) => Promise<Err | null>;
+  updateOrder: (order: Order) => Promise<Err | null>;
 };
 
 export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
@@ -60,6 +64,12 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
     const withLoading = <T>(promise: Promise<T>) => {
       set({ loading: true });
       promise.finally(() => set({ loading: false }));
+      return promise;
+    };
+
+    const withToastCatcher = <T>(promise: Promise<T>) => {
+      set({ loading: true });
+      promise.catch((err) => toast("Request failed:" + err));
       return promise;
     };
 
@@ -83,54 +93,78 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
       loading: true,
 
       register: (name, navigate) => {
-        return withLoading(client.newUser(name)).then((resp) => {
-          set({ username: name, sessionUsers: (resp.ret as any) ?? [] });
+        return withToastCatcher(
+          withLoading(client.newUser(name)).then((resp) => {
+            set({ username: name, sessionUsers: (resp.ret as any) ?? [] });
 
-          // start SSE handling
-          const evtSource = new EventSource("/stream");
-          evtSource.onmessage = (evt) => {
-            const payload = JSON.parse(evt.data) as {
-              reload?: boolean;
-              start?: User[];
-              finish?: User[];
+            // start SSE handling
+            const evtSource = new EventSource("/stream");
+            evtSource.onmessage = (evt) => {
+              const payload = JSON.parse(evt.data) as {
+                reload?: boolean;
+                start?: User[];
+                finish?: User[];
+                roundDuration?: number;
+              };
+
+              let interval: ReturnType<typeof setInterval> | undefined =
+                undefined;
+
+              // ready to play baby
+              if (payload.start) {
+                set({
+                  gameStarted: true,
+                  currentUser: payload.start.find((u) => u.Name === name),
+                  sessionUsers: payload.start,
+                  // convert duration to seconds
+                  roundDuration: payload.roundDuration
+                    ? payload.roundDuration / 1000 / 1000 / 1000
+                    : 0,
+                });
+
+                // start time ticker
+                interval = setInterval(() => {
+                  set({ roundDuration: --get().roundDuration });
+                }, 1000);
+
+                navigate(Routes.StartStocks);
+                console.log("staring game");
+              } else if (payload.finish) {
+                set({ gameStarted: false });
+                if (interval) {
+                  clearInterval(interval as any);
+                }
+                navigate(Routes.Result);
+                console.log("game over");
+              } else if (payload.reload) {
+                get().updateState();
+                clearInterval(interval as any);
+              }
             };
-            // ready to play baby
-            if (payload.start) {
-              set({
-                gameStarted: true,
-                currentUser: payload.start.find((u) => u.Name === name),
-                sessionUsers: payload.start,
-                // roundDuration: payloa
-              });
-              navigate(Routes.StartStocks);
-              console.log("staring game");
-            } else if (payload.finish) {
-              set({ gameStarted: false });
-              navigate(Routes.Result);
-              console.log("game over");
-            } else if (payload.reload) {
-              get().updateState();
-            }
-          };
-          evtSource.onopen = (evt) => {
-            console.log("channel opened");
-          };
-          evtSource.onerror = (evt) => console.error(evt);
+            evtSource.onopen = (evt) => {
+              console.log("channel opened");
+            };
+            evtSource.onerror = (evt) => console.error(evt);
 
-          // TODO: start SSE stream here
-          return resp;
-        });
+            // TODO: start SSE stream here
+            return resp;
+          })
+        );
         // FIXME: handle server error
       },
 
       getStonkInfo: (stonk: StonkName) => {
-        return withLoading(withHandleAuthError(client.getStonkInfo(stonk)));
+        return withToastCatcher(
+          withLoading(withHandleAuthError(client.getStonkInfo(stonk)))
+        );
       },
 
       placeOrder: (cmd: PlaceOrderCmd) => {
-        return withLoading(client.placeOrder({ ...cmd })).then((resp) => {
-          return resp;
-        });
+        return withToastCatcher(
+          withLoading(client.placeOrder({ ...cmd })).then((resp) => {
+            return resp;
+          })
+        );
       },
 
       getStonksHistory: async () => {
@@ -157,18 +191,46 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
         });
       },
 
+      updateOrder: (order) => {
+        return withToastCatcher(
+          withLoading(
+            client
+              .updateOrder({
+                Id: order.UserName,
+                Price: order.Price,
+                Quantity: order.Quantity,
+              })
+              .then((err) => {
+                if (err) {
+                  toast("Failed to update order: " + err);
+                  return err;
+                } else {
+                  toast("Order updated: " + err);
+                  return null;
+                }
+              })
+          )
+        );
+      },
+
+      deleteOrder(order) {
+        return get().updateOrder({ ...order, Quantity: 0 });
+      },
+
       updateState: () => {
-        withLoading(client.getUserInfo()).then(
-          ({ ret: user, ret_1: users, ret_2: err }) => {
-            if (err != null) {
-              handleAuthError(err);
-              return;
+        return withToastCatcher(
+          withLoading(client.getUserInfo()).then(
+            ({ ret: user, ret_1: users, ret_2: err }) => {
+              if (err != null) {
+                handleAuthError(err);
+                return;
+              }
+              set({
+                sessionUsers:
+                  (users?.filter((user) => user != null) as any) ?? [],
+              });
             }
-            set({
-              sessionUsers:
-                (users?.filter((user) => user != null) as any) ?? [],
-            });
-          }
+          )
         );
       },
     };

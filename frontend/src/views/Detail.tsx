@@ -12,16 +12,72 @@ import SvgMinus from "../icons/Minus";
 import SvgPlus from "../icons/Plus";
 import { useStonkState } from "../model/store";
 import { getTradeUrl, Routes } from "../router/router";
-import { StonkInfo, StonkName } from "../services/vo-stonks";
+import { Order, StonkInfo, StonkName } from "../services/vo-stonks";
 import SvgEdit from "../icons/Edit";
 import { StonkHistoryList } from "../components/listItems/StonkHistoryList";
 import { StonksAssetsMatch } from "../assets/StonksAssetsMatch";
+import {
+  PlayerListItem,
+  PlayerTag,
+} from "../components/listItems/PlayerListItem";
+import SvgTrash from "../icons/Trash";
 
-const formatter = new Intl.NumberFormat("en-IN", {
-  maximumSignificantDigits: 3,
-  maximumFractionDigits: 2,
+const formatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
 });
+
+export const OrderList = (props: { orders: Order[]; editable?: boolean }) => {
+  const { editOrder, deleteOrder } = useStonkState((state) => ({
+    editOrder: state.updateOrder,
+    deleteOrder: state.deleteOrder,
+  }));
+
+  return (
+    <ul>
+      {props.orders.map((order, index) => (
+        <li
+          className="py-5 flex gap-2 justify-between items-center border-b-foreground border-b-2 last:border-b-0"
+          key={index}
+        >
+          <span className="flex gap-2 items-center">
+            <PlayerTag idx={index} value={order.UserName} />
+            ordered <b> {order.Quantity} </b>
+            for
+            <span>
+              {order.Price}
+              <Currency size={2} />
+              each
+            </span>
+          </span>
+          {props.editable && (
+            <span className="flex gap-3 opacity-50">
+              <button onClick={() => deleteOrder(order)}>
+                <SvgTrash />
+              </button>
+              <button onClick={() => editOrder(order)}>
+                <SvgEdit />
+              </button>
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+export const StonkImage = (props: { size: number; stonk: StonkName }) => {
+  const img = StonksAssetsMatch.filter(
+    (elem) => elem.stonk === props.stonk
+  )?.[0]?.img;
+
+  return (
+    <>
+      {img && (
+        <img width={props.size} height={props.size} src={img} alt={"image"} />
+      )}
+    </>
+  );
+};
 
 export const CurrencyDisplay = (props: { value: number }) => {
   return (
@@ -62,14 +118,10 @@ function Detail() {
   if (!stonk) {
     return <Spinner />;
   }
-
-  const img = StonksAssetsMatch.filter((elem) => elem.stonk === stonkName)?.[0]
-    .img;
-
   return (
     <Container>
-      <div className="flex items-center justify-start ">
-        {img && <img className="w-36 h-36" src={img} alt={"image"} />}
+      <div className="flex ml-7 items-center justify-start ">
+        <StonkImage stonk={stonkName as StonkName} size={50} />
         <h1>{stonkName}</h1>
       </div>
 
@@ -83,40 +135,18 @@ function Detail() {
         </h2>
         <StonkGraph stonk={stonk} />
       </Card>
-<<<<<<< HEAD
-      <div className="flex justify-start gap-5 mx-7">
-=======
-      <Card className="mx-0">
-        <h2>Pending Orders</h2>
-        <ul>
-          {stonk.UserOrders?.map((order, index) => (
-            <li className="py-5 border-b-foreground border-b-2" key={index}>
-              You ordered {order.Quantity} @ {order.Price} <Currency/> 
-            </li>
-          ))}
-          {stonk.Orders?.map((order, index) => (
-            <li key={index} className="py-5 border-b-foreground border-b-2">
-              {order.UserName} {order.Quantity} @ {order.Price} <Currency/> 
-            </li>
-          ))}
-        </ul>
-      </Card>
-      {stonk.MatchHistory && stonk.MatchHistory.length > 0 && (
-        <StonkHistoryList stonk={stonk} />
-      )}
-      <div className="flex justify-evenly">
->>>>>>> 7fe16777dae9ad84e1a4f537a332535b8f31e571
+      <div className="flex items-center gap-5 mx-7 min-w-full">
         <RouterButton
-          className="py-4 px-8"
+          className="py-4 min-w-full px-8 bg-red-500 text-red-900"
           route={getTradeUrl(stonkName!, "sell") as Routes}
         >
-          <div className="flex items-center gap-5">
+          <div className="flex items-center  gap-5">
             <SvgMinus />
             Sell
           </div>
         </RouterButton>
         <RouterButton
-          className="py-4 px-8"
+          className="py-4 px-8 min-w-full bg-green-500 text-green-900"
           route={getTradeUrl(stonkName!, "buy") as Routes}
         >
           <div className="flex items-center gap-5">
@@ -125,20 +155,13 @@ function Detail() {
         </RouterButton>
       </div>
       {stonk.UserOrders && stonk.UserOrders.length > 0 && (
-        <Card className="mx-0">
-          <h2>Pending Orders</h2>
-          <ul>
-            {stonk.UserOrders?.map((order, index) => (
-              <li className="py-5 border-b-foreground border-b-2" key={index}>
-                @{order.UserName} ordered {order.Quantity}
-              </li>
-            ))}
-            {stonk.Orders?.map((order, index) => (
-              <li key={index} className="py-5 border-b-foreground border-b-2">
-                {order.UserName} {order.Quantity}
-              </li>
-            ))}
-          </ul>
+        <Card headline="Pending Orders" className="mx-0">
+          <h2>Your Orders</h2>
+          <OrderList orders={stonk.UserOrders} editable />
+          <br />
+          <br />
+          <h2>All Orders</h2>
+          <OrderList orders={stonk.Orders ?? []} />
         </Card>
       )}
 
