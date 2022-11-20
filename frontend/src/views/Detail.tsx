@@ -38,7 +38,6 @@ function Detail() {
   const [stonk, setStonk] = useState<StonkInfo | undefined>();
 
   useEffect(() => {
-    console.log("render", stonkName);
     const onError = () => {
       navigate(Routes.Home);
       return;
@@ -46,7 +45,6 @@ function Detail() {
 
     // uknown stonk or not set
     if (!stonkName) {
-      console.log("error");
       onError();
       return;
     }
@@ -85,30 +83,12 @@ function Detail() {
         </h2>
         <StonkGraph stonk={stonk} />
       </Card>
-      <Card className="mx-0">
-        <h2>Pending Orders</h2>
-        <ul>
-          {stonk.UserOrders?.map((order, index) => (
-            <li className="py-5 border-b-foreground border-b-2" key={index}>
-              @{order.UserName} ordered {order.Quantity}
-            </li>
-          ))}
-          {stonk.Orders?.map((order, index) => (
-            <li key={index} className="py-5 border-b-foreground border-b-2">
-              {order.UserName} {order.Quantity}
-            </li>
-          ))}
-        </ul>
-      </Card>
-      {stonk.MatchHistory && stonk.MatchHistory.length > 0 && (
-        <StonkHistoryList stonk={stonk} />
-      )}
-      <div className="flex justify-evenly">
+      <div className="flex justify-start gap-5 mx-7">
         <RouterButton
           className="py-4 px-8"
           route={getTradeUrl(stonkName!, "sell") as Routes}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <SvgMinus />
             Sell
           </div>
@@ -117,11 +97,32 @@ function Detail() {
           className="py-4 px-8"
           route={getTradeUrl(stonkName!, "buy") as Routes}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <SvgPlus /> Buy
           </div>
         </RouterButton>
       </div>
+      {stonk.UserOrders && stonk.UserOrders.length > 0 && (
+        <Card className="mx-0">
+          <h2>Pending Orders</h2>
+          <ul>
+            {stonk.UserOrders?.map((order, index) => (
+              <li className="py-5 border-b-foreground border-b-2" key={index}>
+                @{order.UserName} ordered {order.Quantity}
+              </li>
+            ))}
+            {stonk.Orders?.map((order, index) => (
+              <li key={index} className="py-5 border-b-foreground border-b-2">
+                {order.UserName} {order.Quantity}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {stonk.MatchHistory && stonk.MatchHistory.length > 0 && (
+        <StonkHistoryList stonk={stonk} />
+      )}
     </Container>
   );
 }

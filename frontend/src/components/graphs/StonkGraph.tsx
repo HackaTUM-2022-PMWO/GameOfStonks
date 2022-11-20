@@ -1,3 +1,4 @@
+import { NONAME } from "dns";
 import { Line, LineChart, Tooltip } from "recharts";
 import { StonkInfo, User } from "../../services/vo-stonks";
 
@@ -20,7 +21,13 @@ export const StonkGraph = (props: GraphProps) => {
         })) ?? []
       }
     >
-      <Tooltip />
+      <Tooltip
+        contentStyle={{
+          background: "#250049",
+          border: 0,
+          outline: 0,
+        }}
+      />
       <Line type="monotone" dataKey="value" stroke="#fff" strokeWidth={5} />
     </LineChart>
   );
