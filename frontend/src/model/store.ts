@@ -13,6 +13,9 @@ import {
 import { Routes } from "../router/router";
 import { toast } from "react-toastify";
 
+const getCookieValue = (name: string) =>
+  document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)")?.pop() || "";
+
 export type StonksState = {
   roundDuration: number;
 
@@ -228,6 +231,8 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
               }
               set({
                 renderKey: ++get().renderKey,
+                gameStarted: true,
+                currentUser: user ?? undefined,
                 sessionUsers:
                   (users?.filter((user) => user != null) as any) ?? [],
               });
