@@ -1,9 +1,10 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {Routes} from "../router/router";
+import {StonksAssetsMatch} from "../assets/StonksAssetsMatch";
 
 function StartStocks() {
-    const stonk = require("./../assets/stonk_icons/paperclip.png"); // TODO: replace with dynamic icon image
+    const stonk = StonksAssetsMatch[1].img; // TODO: replace with dynamic icon image
     const coin = require(`./../assets/coin.png`);
     const delay = (ms: number | undefined) => new Promise(
         resolve => setTimeout(resolve, ms)

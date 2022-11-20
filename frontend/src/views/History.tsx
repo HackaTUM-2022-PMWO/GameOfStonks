@@ -1,6 +1,6 @@
 function History() {
     return (
-        <div>
+        <div className="flex min-h-screen">
             History
         </div>
     );
