@@ -151,8 +151,8 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 		id:                 uuid.New().String(),
 		Name:               name,
 		Money:              s.startMoney,
-		Stonks:             make(map[StonkName]int, len(allStonkNames)),
-		ReservedStonks:     make(map[StonkName]int, len(allStonkNames)),
+		Stonks:             make(map[StonkName]int, len(AllStonkNames)),
+		ReservedStonks:     make(map[StonkName]int, len(AllStonkNames)),
 		NetWorthTimeSeries: make(DataPoints, 0, 1000),
 	}
 

@@ -89,7 +89,7 @@ func (p *MemoryOrderPersistor) UpdateOrder(ctx context.Context, order Order) err
 		ctx,
 		bson.D{{Key: "id", Value: order.Id}},
 		bson.D{{Key: "$set", Value: order}},
-		options.Update().SetUpsert(true),
+		options.Update().SetUpsert(false), // we only want to update
 	)
 	if err != nil {
 		p.l.Error("unable to update order", zap.Error(err))
