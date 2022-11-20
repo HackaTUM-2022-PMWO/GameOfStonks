@@ -19,20 +19,14 @@ func (e *Err) Error() string {
 	return e.Message
 }
 
-// type ScalarError string
-
-// func (se *ScalarError) Error() string {
-// 	return string(*se)
-// }
-
-// type ScalarInPlace string
-
 type StonksService struct {
 	l *zap.Logger
 
 	// configuration values
 	//
-	startMoney float64
+	startMoney    float64
+	startStonks   map[StonkName]int
+	roundDuration time.Duration
 
 	// Time series data for all the stonks
 	prices Prices
@@ -41,6 +35,8 @@ type StonksService struct {
 	matchP store.MatchPersistor
 
 	matchUpdateCh <-chan []*store.Match
+
+	sseCh chan State
 
 	// users are only held ephemeraly
 	waitingUsers map[string]*User
@@ -51,28 +47,39 @@ func NewStonksService(
 	l *zap.Logger,
 	initialStonkPrices map[StonkName]float64,
 	startMoney float64,
+	startStonks map[StonkName]int,
+	roundDuration time.Duration,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
 	matchUpdateCh <-chan []*store.Match,
+	sseCh chan State,
 ) *StonksService {
 	return &StonksService{
 		l:             l.With(zap.String("component", "service")),
 		prices:        NewPrices(initialStonkPrices),
 		startMoney:    startMoney,
+		startStonks:   startStonks,
+		roundDuration: roundDuration,
 		orderP:        orderP,
 		matchP:        matchP,
 		matchUpdateCh: matchUpdateCh,
+		sseCh:         sseCh,
 
 		waitingUsers: make(map[string]*User, 5),
 		activeUsers:  make(map[string]*User, 5),
 	}
 }
 
+type State struct {
+	Start  []*User `json:"start,omitempty"`
+	Reload bool    `json:"reload"`
+	Finish []*User `json:"finish,omitempty"`
+}
+
 type User struct {
 	mu sync.Mutex
 
-	id string // NOTE: private on purpose
-	// TODO: Probably need to add the ID without leaking it to other users (impersenation!)
+	id   string // NOTE: private on purpose
 	Name string
 
 	Money         float64
@@ -81,11 +88,8 @@ type User struct {
 	Stonks         map[StonkName]int
 	ReservedStonks map[StonkName]int
 
-	// FIXME: The networth actually needs to be initialized if we also give the user stonks to begin with!
 	NetWorth           float64
 	NetWorthTimeSeries DataPoints
-
-	// TODO: Need to create a users NetWorth (i.e. money current values of stonks)
 }
 
 type Match struct {
@@ -144,10 +148,31 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	}
 
 	u := &User{
-		id:    uuid.New().String(),
-		Name:  name,
-		Money: s.startMoney,
+		id:                 uuid.New().String(),
+		Name:               name,
+		Money:              s.startMoney,
+		Stonks:             make(map[StonkName]int, len(AllStonkNames)),
+		ReservedStonks:     make(map[StonkName]int, len(AllStonkNames)),
+		NetWorthTimeSeries: make(DataPoints, 0, 1000),
 	}
+
+	// set the number of starting stocks
+	for s, i := range s.startStonks {
+		u.Stonks[s] = i
+	}
+
+	// initialize the networth
+	u.NetWorth = u.Money
+	for stonk, num := range u.Stonks {
+		u.NetWorth += float64(num) * s.prices[stonk].LatestValue()
+	}
+
+	// update the latest NetWorthTimeSeries-DataPoints
+	u.NetWorthTimeSeries = append(u.NetWorthTimeSeries, DataPoint{
+		Time:  0,
+		Value: u.NetWorth,
+	})
+
 	s.waitingUsers[u.id] = u
 
 	// Set a cookie
@@ -163,37 +188,48 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	sort.Slice(users, func(i, j int) bool {
 		return users[i].Name < users[j].Name
 	})
+
+	// TODO: Maybe change the condition before the presentation
+	if len(s.waitingUsers) >= 2 {
+		time.Sleep(100 * time.Millisecond)
+		s.startSession()
+	}
+
 	return users, nil
 }
 
-// TODO: Actually this should be an SSE
-func (s *StonksService) StartSession(w http.ResponseWriter, r *http.Request, id string) ([]*User, *Err) {
+func (s *StonksService) GetUserInfo(w http.ResponseWriter, r *http.Request) (*User, []*User, *Err) {
 	if r.Method != http.MethodPost {
-		return nil, &Err{"you gotta post wlad"}
+		return nil, nil, &Err{"you gotta post wlad"}
 	}
 
-	// TODO: Need to clear the users after one round
-	if len(s.activeUsers) != 0 {
-		s.l.Error("session already active",
-			zap.Int("waiting_users_len", len(s.waitingUsers)),
-			zap.Int("active_users_len", len(s.activeUsers)),
-		)
-		return nil, &Err{"other session still active"}
+	exists, userId, err := userExists(r, s.activeUsers)
+	if err != nil {
+		s.l.Error("unable to read user cookie", zap.Error(err))
+		return nil, nil, &Err{"unable to read user cookie"}
+	} else if !exists {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return nil, nil, &Err{"user is not an active user"}
 	}
 
-	// make the waitingUsers the active ones
-	s.activeUsers = s.waitingUsers
+	user, ok := s.activeUsers[userId]
+	if !ok {
+		s.l.Error("user is not an active user", zap.String("user_id", userId))
+		return nil, nil, &Err{"user is not an active user"}
+	}
 
-	users := make([]*User, 0, len(s.activeUsers))
-	for _, u := range s.activeUsers {
-		users = append(users, u)
+	otherUsers := make([]*User, 0, len(s.activeUsers)-1)
+	for _, u := range s.waitingUsers {
+		if u.id != userId {
+			otherUsers = append(otherUsers, u)
+		}
 	}
 
 	// sort the users
-	sort.Slice(users, func(i, j int) bool {
-		return users[i].Name < users[j].Name
+	sort.Slice(otherUsers, func(i, j int) bool {
+		return otherUsers[i].Name < otherUsers[j].Name
 	})
-	return users, nil
+	return user, otherUsers, nil
 }
 
 func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, stonk StonkName) (StonkInfo, *Err) {
@@ -205,10 +241,10 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	exists, userId, err := userExists(r, s.activeUsers)
 	if err != nil {
 		s.l.Warn("unable to read user cookie", zap.Error(err))
-		// only warn - we still can return most of the result
+		return StonkInfo{}, &Err{"unable to read user cookie"}
 	} else if !exists {
 		s.l.Warn("user is not an active user", zap.String("user_id", userId))
-		// only warn - we still can return most of the result
+		return StonkInfo{}, &Err{"user is not an active user"}
 	}
 
 	// make sure the stonk is valid and actually set
@@ -225,17 +261,15 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	}
 
 	userStoreOrders := make([]*store.Order, 0, len(storeOrders))
-	if userId != "" {
-		newStoreOrders := make([]*store.Order, 0, len(storeOrders))
-		for _, o := range storeOrders {
-			if o.User.ID == userId {
-				userStoreOrders = append(userStoreOrders, o)
-			} else {
-				newStoreOrders = append(newStoreOrders, o)
-			}
+	newStoreOrders := make([]*store.Order, 0, len(storeOrders))
+	for _, o := range storeOrders {
+		if o.User.ID == userId {
+			userStoreOrders = append(userStoreOrders, o)
+		} else {
+			newStoreOrders = append(newStoreOrders, o)
 		}
-		storeOrders = newStoreOrders
 	}
+	storeOrders = newStoreOrders
 
 	// transform the orders
 	orders := ordersToStonksVo(storeOrders)
@@ -248,7 +282,7 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 		return userOrders[i].TimeStamp > userOrders[j].TimeStamp
 	})
 
-	storeMatches, err := s.matchP.GetMatches(r.Context(), string(stonk), nil)
+	storeMatches, err := s.matchP.GetMatches(r.Context(), string(stonk))
 	if err != nil {
 		s.l.Error("unable to retrieve orders", zap.String("stonk", string(stonk)), zap.Error(err))
 		return StonkInfo{}, &Err{"unable to retrieve orders"}
@@ -262,10 +296,15 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	})
 
 	// update the prices before we retrieve them
-	err = s.update()
-	if err != nil {
-		s.l.Error("unable to update", zap.Error(err))
-		return StonkInfo{}, &Err{"unable to update"}
+	updated := s.update()
+	if updated {
+		state := State{
+			Start:  nil,
+			Reload: true,
+			Finish: nil,
+		}
+
+		s.sseCh <- state
 	}
 
 	ts, ok := s.prices[stonk]
@@ -563,12 +602,3 @@ func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd 
 		return nil
 	}
 }
-
-// TODO: Add functions for:
-// - GetUserInfo (users current portfolie + others)
-
-// TODO: Add SSE for:
-// - StartSession(?)
-// - Order has been matched
-// - NewGameState (how the fuck?)
-// - SessionFinished (need to include leaderboard)

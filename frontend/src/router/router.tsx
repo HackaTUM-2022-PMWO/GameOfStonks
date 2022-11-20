@@ -9,6 +9,7 @@ import StartStocks from "../views/StartStocks";
 import Trade from "../views/Trade";
 import React from "react";
 import App from "../App";
+import History from "../views/History";
 
 export enum Routes {
   Onboard = "/",
@@ -18,14 +19,17 @@ export enum Routes {
   Result = "/result",
   Search = "/search",
   StartStocks = "/start",
+  History = "/history",
   Trade = "/trade/:stonkName/:mode",
 }
 
 export const getStonkUrl = (stonkName: string) =>
   Routes.Detail.replace(":stonkName", stonkName);
 
-export const getTradeUrl = (stonkName: string, mode: "buy" | "sell") =>
-  Routes.Trade.replace(":stonkName", stonkName).replace(":mode", mode);
+export const getTradeUrl = (
+  stonkName: string,
+  mode: "buy" | "sell" | "delete"
+) => Routes.Trade.replace(":stonkName", stonkName).replace(":mode", mode);
 
 export const router = createBrowserRouter([
   {
@@ -59,6 +63,10 @@ export const router = createBrowserRouter([
       {
         path: Routes.StartStocks,
         element: <StartStocks />,
+      },
+      {
+        path: Routes.History,
+        element: <History />,
       },
       {
         path: Routes.Trade,

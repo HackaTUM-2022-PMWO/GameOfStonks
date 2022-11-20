@@ -11,16 +11,16 @@ export class StonksServiceClient {
 		const response = await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.StonkInfo; 1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("GetStonkInfo", [stonk])
 		return {ret : response[0], ret_1 : response[1]};
 	}
-	async newUser(name:string):Promise<{ret:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User>|null; ret_1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
-		const response = await this.transport<{0:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User>|null; 1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("NewUser", [name])
+	async getUserInfo():Promise<{ret:github_com_hackaTUM_GameOfStonks_services_stonks.User|null; ret_1:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User|null>|null; ret_2:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
+		const response = await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.User|null; 1:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User|null>|null; 2:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("GetUserInfo", [])
+		return {ret : response[0], ret_1 : response[1], ret_2 : response[2]};
+	}
+	async newUser(name:string):Promise<{ret:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User|null>|null; ret_1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
+		const response = await this.transport<{0:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User|null>|null; 1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("NewUser", [name])
 		return {ret : response[0], ret_1 : response[1]};
 	}
 	async placeOrder(cmd:github_com_hackaTUM_GameOfStonks_services_stonks.PlaceOrderCmd):Promise<github_com_hackaTUM_GameOfStonks_services_stonks.Err|null> {
 		return (await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("PlaceOrder", [cmd]))[0]
-	}
-	async startSession(id:string):Promise<{ret:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User>|null; ret_1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}> {
-		const response = await this.transport<{0:Array<github_com_hackaTUM_GameOfStonks_services_stonks.User>|null; 1:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("StartSession", [id])
-		return {ret : response[0], ret_1 : response[1]};
 	}
 	async updateOrder(cmd:github_com_hackaTUM_GameOfStonks_services_stonks.UpdateOrderCmd):Promise<github_com_hackaTUM_GameOfStonks_services_stonks.Err|null> {
 		return (await this.transport<{0:github_com_hackaTUM_GameOfStonks_services_stonks.Err|null}>("UpdateOrder", [cmd]))[0]

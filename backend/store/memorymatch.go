@@ -32,16 +32,13 @@ func (p *MemoryMatchPersistor) AddMatch(ctx context.Context, match *Match) error
 	return err
 }
 
-func (p *MemoryMatchPersistor) GetMatches(ctx context.Context, stonk string, user *User) ([]*Match, error) {
+func (p *MemoryMatchPersistor) GetMatches(ctx context.Context, stonk string) ([]*Match, error) {
 	// Returns the history of all matches
 	var allMatches []*Match
 
 	filter := bson.D{}
 	if stonk != "" {
 		filter = append(filter, bson.E{Key: "stonk", Value: string(stonk)})
-	}
-	if user != nil {
-		filter = append(filter, bson.E{Key: "user.id", Value: user.ID})
 	}
 
 	cur, err := p.col.Find(ctx, filter)

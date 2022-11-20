@@ -67,6 +67,7 @@ export interface User {
 	Money:number;
 	ReservedMoney:number;
 	Stonks:Record<github_com_hackaTUM_GameOfStonks_services_stonks.StonkName,number>|null;
+	ReservedStonks:Record<github_com_hackaTUM_GameOfStonks_services_stonks.StonkName,number>|null;
 	NetWorth:number;
 	NetWorthTimeSeries:github_com_hackaTUM_GameOfStonks_services_stonks.DataPoints|null;
 }

@@ -13,9 +13,9 @@ import (
 
 const (
 	StonksServiceGoTSRPCProxyGetStonkInfo = "GetStonkInfo"
+	StonksServiceGoTSRPCProxyGetUserInfo  = "GetUserInfo"
 	StonksServiceGoTSRPCProxyNewUser      = "NewUser"
 	StonksServiceGoTSRPCProxyPlaceOrder   = "PlaceOrder"
-	StonksServiceGoTSRPCProxyStartSession = "StartSession"
 	StonksServiceGoTSRPCProxyUpdateOrder  = "UpdateOrder"
 )
 
@@ -77,6 +77,24 @@ func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Req
 		}
 		gotsrpc.Monitor(w, r, args, rets, callStats)
 		return
+	case StonksServiceGoTSRPCProxyGetUserInfo:
+		var (
+			args []interface{}
+			rets []interface{}
+		)
+		executionStart := time.Now()
+		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
+		getUserInfoRet, getUserInfoRet_1, getUserInfoRet_2 := p.service.GetUserInfo(&rw, r)
+		callStats.Execution = time.Since(executionStart)
+		if rw.Status() == http.StatusOK {
+			rets = []interface{}{getUserInfoRet, getUserInfoRet_1, getUserInfoRet_2}
+			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
+				gotsrpc.ErrorCouldNotReply(w)
+				return
+			}
+		}
+		gotsrpc.Monitor(w, r, args, rets, callStats)
+		return
 	case StonksServiceGoTSRPCProxyNewUser:
 		var (
 			args []interface{}
@@ -122,32 +140,6 @@ func (p *StonksServiceGoTSRPCProxy) ServeHTTP(w http.ResponseWriter, r *http.Req
 		callStats.Execution = time.Since(executionStart)
 		if rw.Status() == http.StatusOK {
 			rets = []interface{}{placeOrderRet}
-			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
-				gotsrpc.ErrorCouldNotReply(w)
-				return
-			}
-		}
-		gotsrpc.Monitor(w, r, args, rets, callStats)
-		return
-	case StonksServiceGoTSRPCProxyStartSession:
-		var (
-			args []interface{}
-			rets []interface{}
-		)
-		var (
-			arg_id string
-		)
-		args = []interface{}{&arg_id}
-		if err := gotsrpc.LoadArgs(&args, callStats, r); err != nil {
-			gotsrpc.ErrorCouldNotLoadArgs(w)
-			return
-		}
-		executionStart := time.Now()
-		rw := gotsrpc.ResponseWriter{ResponseWriter: w}
-		startSessionRet, startSessionRet_1 := p.service.StartSession(&rw, r, arg_id)
-		callStats.Execution = time.Since(executionStart)
-		if rw.Status() == http.StatusOK {
-			rets = []interface{}{startSessionRet, startSessionRet_1}
 			if err := gotsrpc.Reply(rets, callStats, r, w); err != nil {
 				gotsrpc.ErrorCouldNotReply(w)
 				return

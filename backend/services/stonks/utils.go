@@ -3,10 +3,13 @@ package stonks
 import (
 	"errors"
 	http "net/http"
+	"sort"
+	"time"
+
+	"go.uber.org/zap"
 )
 
-// TODO: Need to update player NetWorth
-func (s *StonksService) update() error {
+func (s *StonksService) update() bool {
 	// drain the updates chanel until it is empty
 	updated := false
 	for {
@@ -22,6 +25,18 @@ func (s *StonksService) update() error {
 					Value: value,
 				})
 			}
+
+			// Add a new entry to the users NetWorthTimeSeries-DataPoints
+			for userId, user := range s.activeUsers {
+				user.mu.Lock()
+				user.NetWorthTimeSeries = append(user.NetWorthTimeSeries, DataPoint{
+					Time:  user.NetWorthTimeSeries.LatestTime() + 1,
+					Value: user.NetWorthTimeSeries.LatestValue(),
+				})
+				s.activeUsers[userId] = user
+				user.mu.Unlock()
+			}
+
 			// update the value to the actual new on if there is a match for this stock
 			for _, match := range matches {
 				stonkName := StonkName(match.Stonk)
@@ -31,13 +46,17 @@ func (s *StonksService) update() error {
 
 				// update the users stock position
 				for userId, user := range s.activeUsers {
-					if userId == match.BuyOrder.User.ID {				// if buyer
+					user.mu.Lock()
+					if userId == match.BuyOrder.User.ID { // if buyer
 						user.Stonks[stonkName] += match.Quantity
 						user.ReservedStonks[stonkName] -= match.Quantity
-						user.ReservedMoney += float64(match.Quantity) * s.prices[stonkName].LatestValue()
-					} else if userId != match.SellOrder.User.ID {		// elif seller
-						user.Stonks[stonkName] -= 1
+						user.ReservedMoney -= float64(match.Quantity) * match.BuyOrder.Price
+						user.Money -= float64(match.Quantity) * match.BuyOrder.Price
+					} else if userId != match.SellOrder.User.ID { // elif seller
+						user.Stonks[stonkName] -= match.Quantity
+						user.Money += float64(match.Quantity) * match.SellOrder.Price
 					} else {
+						user.mu.Unlock()
 						continue
 					}
 
@@ -47,21 +66,20 @@ func (s *StonksService) update() error {
 						user.NetWorth += float64(num) * s.prices[stonk].LatestValue()
 					}
 
-					// update the NetWorthTimeSeries-DataPoints
-					nextD := DataPoint{s.prices[stonkName].LatestTime(), user.NetWorth}
-					user.NetWorthTimeSeries = append(user.NetWorthTimeSeries, nextD)
+					// update the latest NetWorthTimeSeries-DataPoints
+					user.NetWorthTimeSeries[len(user.NetWorthTimeSeries)-1].Value = user.NetWorth
 
 					s.activeUsers[userId] = user
+					user.mu.Unlock()
 				}
 			}
 
-			updated = true
 			// see if there are more updates
 		default:
 			if updated {
-				// FIXME: Trigger SSE with new state
+				return true
 			}
-			return nil
+			return false
 		}
 	}
 }
@@ -81,4 +99,64 @@ func userExists(r *http.Request, users map[string]*User) (bool, string, error) {
 
 	return false, "", nil
 
+}
+
+func (s *StonksService) startSession() {
+	// TODO: Need to clear the users after one round
+	if len(s.activeUsers) != 0 {
+		s.l.Error("session already active",
+			zap.Int("waiting_users_len", len(s.waitingUsers)),
+			zap.Int("active_users_len", len(s.activeUsers)),
+		)
+
+		// FIXME: Somehow need to handle the case when a session is already
+		// 			active and enough people are in the waiting room again
+		// return &Err{"other session still active"}
+		return
+	}
+
+	// make the waitingUsers the active ones
+	s.activeUsers = s.waitingUsers
+
+	users := make([]*User, 0, len(s.activeUsers))
+	for _, u := range s.activeUsers {
+		users = append(users, u)
+	}
+
+	// sort the users
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].Name < users[j].Name
+	})
+
+	// make sure all users are up to date
+	_ = s.update()
+
+	// Start a timer for the end
+	time.AfterFunc(s.roundDuration, func() {
+		users := make([]*User, 0, len(s.activeUsers))
+		for _, u := range s.activeUsers {
+			users = append(users, u)
+		}
+
+		// sort the users - highest NetWorth first
+		sort.Slice(users, func(i, j int) bool {
+			return users[i].NetWorth > users[j].NetWorth
+		})
+
+		state := State{
+			Start:  nil,
+			Reload: false, // the front-end will end the game so no need to reload the current page
+			Finish: users,
+		}
+		s.sseCh <- state
+
+		s.activeUsers = make(map[string]*User, len(s.activeUsers))
+	})
+
+	state := State{
+		Start:  users,
+		Reload: false, // the front-end will start the game so no need to reload the current page
+		Finish: nil,
+	}
+	s.sseCh <- state
 }
