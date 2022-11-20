@@ -47,7 +47,7 @@ type ServiceHandler struct {
 	l *zap.Logger
 
 	// used to add streams
-	streamsLock *sync.RWMutex
+	streamsLock sync.RWMutex
 
 	msgChan <-chan stonks.State
 
@@ -93,13 +93,15 @@ func (wh *ServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Cache-Control", "no-transform")
 		w.Header().Set("Connection", "keep-alive")
-		w.Write([]byte("hello string"))
 
 		wh.addStream(w)
 
+		for {
+			time.Sleep(time.Second * 5)
+		}
 	default:
-		fmt.Println("here we go again")
 		wh.defaultHandler.ServeHTTP(w, r)
 	}
 }
@@ -111,6 +113,7 @@ func NewServiceHandler(
 	msgChan chan stonks.State,
 ) *ServiceHandler {
 	s := &ServiceHandler{
+		streams:        make([]http.ResponseWriter, 0),
 		l:              l,
 		defaultHandler: fallbackHandler,
 		msgChan:        msgChan,
@@ -120,32 +123,54 @@ func NewServiceHandler(
 }
 
 func (wh *ServiceHandler) Run() {
-	for msg := range wh.msgChan {
-		payload, err := json.Marshal(msg)
-		if err != nil {
-			wh.l.Error("failed to encode message", zap.Error(err))
-			break
-		}
+	for {
+		// timeout := time.After(1 * time.Second)
+		select {
+		case msg := <-wh.msgChan:
+			payload, err := json.Marshal(msg)
+			if err != nil {
+				wh.l.Error("failed to encode message", zap.Error(err))
+				break
+			}
 
-		// construct SSE payload
-		ssePayload := []byte("data: ")
-		ssePayload = append(ssePayload, payload...)
-		ssePayload = append(ssePayload, []byte("\n\n")...)
+			// construct SSE payload
+			ssePayload := []byte("data: ")
+			ssePayload = append(ssePayload, payload...)
+			ssePayload = append(ssePayload, []byte("\n\n")...)
 
-		// send message to all clients
-		wh.streamsLock.Lock()
+			// send message to all clients
+			wh.streamsLock.Lock()
 
-		for _, w := range wh.streams {
-			if _, err := w.Write(ssePayload); err != nil {
-				// remove stream if broken
-				wh.removeSteam(w)
-			} else {
-				// flush stream content to client
-				// to prevent delay
-				if f, ok := w.(http.Flusher); ok {
-					f.Flush()
+			for _, w := range wh.streams {
+				if _, err := w.Write(ssePayload); err != nil {
+					// remove stream if broken
+					wh.removeSteam(w)
+				} else {
+					wh.l.Info("written to stream")
+					// flush stream content to client
+					// to prevent delay
+					if f, ok := w.(http.Flusher); ok {
+						f.Flush()
+					}
 				}
 			}
+			wh.streamsLock.Unlock()
+			// case <-timeout:
+			// 	wh.streamsLock.Lock()
+			// 	for _, w := range wh.streams {
+			// 		if _, err := w.Write([]byte("event: ping\n")); err != nil {
+			// 			// remove stream if broken
+			// 			wh.removeSteam(w)
+			// 		} else {
+			// 			// flush stream content to client
+			// 			// to prevent delay
+			// 			if f, ok := w.(http.Flusher); ok {
+			// 				f.Flush()
+			// 			}
+			// 		}
+			// 	}
+			// 	wh.streamsLock.Unlock()
+			// }
 		}
 	}
 }
@@ -220,7 +245,7 @@ func main() {
 		Handler:  sh,
 	}
 
-	sh.Run()
+	go sh.Run()
 
 	err = server.ListenAndServe()
 	if err != nil {

@@ -1,6 +1,7 @@
 import vanillaCreate from "zustand/vanilla";
 import create from "zustand";
 import { StonksServiceClient } from "../services/stonk-client";
+import {} from "../services/vo-stonks";
 import { getClient } from "../services/transport";
 import {
   OrderType,
@@ -9,6 +10,8 @@ import {
   StonkName,
   User,
 } from "../services/vo-stonks";
+import userEvent from "@testing-library/user-event";
+import { Routes } from "../router/router";
 
 export type StonksState = {
   loading: boolean;
@@ -21,7 +24,10 @@ export type StonksState = {
 };
 
 export type StonksModifiers = {
-  register: (name: string) => ReturnType<StonksServiceClient["newUser"]>;
+  register: (
+    name: string,
+    navigate: (url: string) => void
+  ) => ReturnType<StonksServiceClient["newUser"]>;
 
   getStonkInfo: (
     stonkName: StonkName
@@ -48,9 +54,25 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
       gameStarted: false,
       loading: false,
 
-      register: (name: string) => {
+      register: (name, navigate) => {
         return withLoading(client.newUser(name)).then((resp) => {
-          set({ username: name, sessionUsers: resp.ret as any?? [] });
+          set({ username: name, sessionUsers: (resp.ret as any) ?? [] });
+
+          const evtSource = new EventSource("/stream");
+          evtSource.onmessage = (evt) => {
+            const payload = JSON.parse(evt.data);
+            console.log("msg", payload);
+
+            // ready to play baby
+            if (payload.start) {
+              navigate(Routes.StartStocks);
+            }
+          };
+          evtSource.onopen = (evt) => {
+            console.log("channel opened");
+          };
+          evtSource.onerror = (evt) => console.error(evt);
+
           // TODO: start SSE stream here
           return resp;
         });
@@ -65,6 +87,14 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
         return withLoading(client.placeOrder({ ...cmd })).then((resp) => {
           return resp;
         });
+      },
+
+      updateState: () => {
+        withLoading(client.getUserInfo()).then(
+          ({ ret: user, ret_1: users, ret_2: err }) => {
+            // if (err == nil)
+          }
+        );
       },
     };
   }

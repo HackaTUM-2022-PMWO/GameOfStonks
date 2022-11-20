@@ -17,7 +17,7 @@ function Onboard() {
     if (userName === "") {
       alert("Please specify a valid user name to participate in GameOfStonks!");
     } else {
-      register(userName).then((resp) => {
+      register(userName, navigate).then((resp) => {
         if (resp.ret_1 == null) {
           navigate(Routes.Lobby);
         } else {
