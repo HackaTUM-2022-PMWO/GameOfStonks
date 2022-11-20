@@ -9,6 +9,7 @@ import { Card } from "../components/card/Card";
 function Onboard() {
   const [userName, setUserName] = useState("");
   const navigate = useNavigate();
+  const rocket = require('./../assets/rocket.png');
   const register = useStonkState((state) => state.register);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +36,10 @@ function Onboard() {
     >
       <div className="grid grid-cols-2">
         <Card className="w-md lg:w-lg space-y-5">
-          <h1>Welcome to the GAME OF STONKS!</h1>
+          <div className="flex flex-row gap-4">
+            <h1>Welcome to the GAME OF STONKS!</h1>
+            <img className="w-12 h-12" src={rocket} alt={"!"}/>
+          </div>
           <div>
             <h4>Project Idea</h4>
             <p>

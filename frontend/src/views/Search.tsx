@@ -9,7 +9,7 @@ function Search() {
 
     return (
         <div className="flex flex-col min-h-screen mt-5 mx-5">
-            <div className="m-10">
+            <div className="mx-10">
                 <form>
                 <label htmlFor="default-search"
                        className="mb-2 text-sm font-medium text-gray-900 sr-only">Search</label>
