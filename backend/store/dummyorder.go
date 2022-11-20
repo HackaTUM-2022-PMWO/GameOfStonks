@@ -14,8 +14,8 @@ type DummyOrderPersistor struct {
 	GottenOrders    [][]*Order
 }
 
-func NewDummyOrderPersistor() *DummyOrderPersistor {
-	return &DummyOrderPersistor{}
+func NewDummyOrderPersistor(Orders []*Order) *DummyOrderPersistor {
+	return &DummyOrderPersistor{Orders: Orders}
 }
 
 func (p *DummyOrderPersistor) GetOrder(ctx context.Context, id string) (*Order, error) {
@@ -73,7 +73,12 @@ func (p *DummyOrderPersistor) DeleteOrder(ctx context.Context, id string) error 
 
 	for i, o := range p.Orders {
 		if o.Id == id {
-			p.Orders = append(p.Orders[:i], p.Orders[i+1:]...)
+			if i == len(p.Orders) {
+				p.Orders = p.Orders[:i]
+			} else {
+				p.Orders = append(p.Orders[:i], p.Orders[i+1:]...)
+			}
+			return nil
 		}
 	}
 	return nil
