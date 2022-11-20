@@ -137,6 +137,9 @@ func (s *StonksService) startSession() {
 	// make sure all users are up to date
 	_ = s.update()
 
+	// initially update the bots so there are order once the players join
+	s.updateBots()
+
 	// Start a timer for the end
 	time.AfterFunc(s.roundDuration, func() {
 		users := make([]*User, 0, len(s.activeUsers))
@@ -159,9 +162,6 @@ func (s *StonksService) startSession() {
 		s.activeUsers = make(map[string]*User, len(s.activeUsers))
 	})
 
-	// initially update the bots so there are order once the players join
-	s.updateBots()
-
 	state := State{
 		Start:         users,
 		RoundDuration: s.roundDuration,
@@ -172,18 +172,19 @@ func (s *StonksService) startSession() {
 }
 
 func (s *StonksService) updateBots() {
-	prices := make(map[string]float64)
+
+	prices := make(map[string]float64, len(s.prices))
 	for stonk, dataPoints := range s.prices {
 		prices[string(stonk)] = dataPoints.LatestValue()
 	}
+	s.l.Debug("updating bots", zap.Int("len", len(s.bots)), zap.Int("len_prices", len(s.bots)))
 
 	// this can easily run in the background so the main service is not blocked too long
 	go func() {
 		for _, b := range s.bots {
-			ctx, err := context.WithTimeout(context.Background(), 2*time.Minute)
-			if err == nil {
-				b.Execute(ctx, prices)
-			}
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			b.Execute(ctx, prices)
+			cancel()
 		}
 	}()
 }
