@@ -1,6 +1,7 @@
 package stonks
 
 import (
+	"context"
 	"errors"
 	http "net/http"
 	"sort"
@@ -81,6 +82,7 @@ func (s *StonksService) update() bool {
 			// see if there are more updates
 		default:
 			if updated {
+				s.updateBots()
 				return true
 			}
 			return false
@@ -157,6 +159,9 @@ func (s *StonksService) startSession() {
 		s.activeUsers = make(map[string]*User, len(s.activeUsers))
 	})
 
+	// initially update the bots so there are order once the players join
+	s.updateBots()
+
 	state := State{
 		Start:         users,
 		RoundDuration: s.roundDuration,
@@ -164,4 +169,21 @@ func (s *StonksService) startSession() {
 		Finish:        nil,
 	}
 	s.sseCh <- state
+}
+
+func (s *StonksService) updateBots() {
+	prices := make(map[string]float64)
+	for stonk, dataPoints := range s.prices {
+		prices[string(stonk)] = dataPoints.LatestValue()
+	}
+
+	// this can easily run in the background so the main service is not blocked too long
+	go func() {
+		for _, b := range s.bots {
+			ctx, err := context.WithTimeout(context.Background(), 2*time.Minute)
+			if err == nil {
+				b.Execute(ctx, prices)
+			}
+		}
+	}()
 }

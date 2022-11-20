@@ -6,8 +6,7 @@ import { Card } from "../components/card/Card";
 import { Container } from "../components/Container";
 import { Currency } from "../components/Currency";
 import { StonkGraph } from "../components/graphs/StonkGraph";
-import { Spinner } from "../components/spinner/Spinner";
-import SvgArrowRight from "../icons/ArrowRight";
+import { SpinnerOverlay } from "../components/spinner/Spinner";
 import SvgMinus from "../icons/Minus";
 import SvgPlus from "../icons/Plus";
 import { useStonkState } from "../model/store";
@@ -16,10 +15,7 @@ import { Order, StonkInfo, StonkName } from "../services/vo-stonks";
 import SvgEdit from "../icons/Edit";
 import { StonkHistoryList } from "../components/listItems/StonkHistoryList";
 import { StonksAssetsMatch } from "../assets/StonksAssetsMatch";
-import {
-  PlayerListItem,
-  PlayerTag,
-} from "../components/listItems/PlayerListItem";
+import { PlayerTag } from "../components/listItems/PlayerListItem";
 import SvgTrash from "../icons/Trash";
 
 const formatter = new Intl.NumberFormat("en-US", {
@@ -116,7 +112,7 @@ function Detail() {
   }, []);
 
   if (!stonk) {
-    return <Spinner />;
+    return <SpinnerOverlay />;
   }
   return (
     <Container>
