@@ -7,6 +7,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 )
 
@@ -84,18 +85,16 @@ func (p *MemoryOrderPersistor) InsertOrder(ctx context.Context, order Order) err
 
 func (p *MemoryOrderPersistor) UpdateOrder(ctx context.Context, order Order) error {
 	// Update the quantity of given order
-	filter := bson.D{{Key: "id", Value: order.Id}}
-	update := bson.D{
-		{Key: "$inc", Value: bson.D{
-			{Key: "quantity", Value: order.Quantity},
-		}},
-	}
-
-	_, err := p.col.UpdateOne(ctx, filter, update)
+	_, err := p.col.UpdateOne(
+		ctx,
+		bson.D{{Key: "id", Value: order.Id}},
+		bson.D{{Key: "$set", Value: order}},
+		options.Update().SetUpsert(true),
+	)
 	if err != nil {
 		p.l.Error("unable to update order", zap.Error(err))
 	}
-	// fmt.Printf("Matched %v documents and updated %v documents.\n", updateResult.MatchedCount, updateResult.ModifiedCount)
+
 	return err
 }
 
@@ -106,7 +105,7 @@ func (p *MemoryOrderPersistor) DeleteOrder(ctx context.Context, id string) error
 	if err != nil {
 		p.l.Error("unable to delete order", zap.Error(err))
 	}
-	// fmt.Printf("Deleted %v documents in the trainers collection\n", deleteResult.DeletedCount)
+
 	return err
 
 }
