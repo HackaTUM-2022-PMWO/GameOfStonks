@@ -15,6 +15,10 @@ func (s *StonksService) update() bool {
 	for {
 		select {
 		case matches := <-s.matchUpdateCh:
+			if len(matches) == 0 {
+				// nothing to update
+				break
+			}
 			// update the stonk prices
 			// set the previous value as a default, just to make sure the clock advances for the stock
 			for stonkName, stonkPrices := range s.prices {
