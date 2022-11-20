@@ -24,6 +24,7 @@ export interface Order {
 	UserName:string;
 	OrderType:github_com_hackaTUM_GameOfStonks_services_stonks.OrderType;
 	Quantity:number;
+	Price:number;
 	TimeStamp:number;
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.OrderType

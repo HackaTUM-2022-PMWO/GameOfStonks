@@ -8,7 +8,7 @@ import {Input} from "../components/inputs/Input";
 import SvgX from "../icons/X";
 import {useStonkState} from "../model/store";
 import {getStonkUrl, Routes} from "../router/router";
-import {OrderType, StonkName} from "../services/vo-stonks";
+import {OrderType, StonkInfo, StonkName} from "../services/vo-stonks";
 
 function Trade() {
     const [price, setPrice] = useState(22);

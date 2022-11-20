@@ -39,6 +39,7 @@ func orderToStonksVo(o *store.Order) Order {
 		UserName:  o.User.Name,
 		OrderType: orderTypeToStonksVo(o.Type),
 		Quantity:  o.Quantity,
+		Price:     o.Price,
 		TimeStamp: o.Time.Unix(),
 	}
 }

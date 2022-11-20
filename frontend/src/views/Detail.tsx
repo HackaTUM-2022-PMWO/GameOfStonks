@@ -80,21 +80,21 @@ function Detail() {
         <StonkGraph stonk={stonk} />
       </Card>
       <Card className="mx-0">
-        <h2>Stuff</h2>
+        <h2>Your pending orders</h2>
         <ul>
           {stonk.UserOrders?.map((order, index) => (
             <li key={index}>
-              {order.UserName} {order.Quantity}
+              <b>{order.UserName}</b> {order.Quantity} @ {order.Price} <Currency/> 
             </li>
           ))}
         </ul>
       </Card>
       <Card className="mx-0">
-        <h2>Orders</h2>
+        <h2>Pending Orders</h2>
         <ul>
           {stonk.Orders?.map((order, index) => (
             <li key={index}>
-              {order.UserName} {order.Quantity}
+             <b>{order.UserName}</b> {order.Quantity} @ {order.Price} <Currency/> 
             </li>
           ))}
         </ul>

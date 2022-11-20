@@ -103,6 +103,7 @@ type Order struct {
 	UserName  string
 	OrderType OrderType
 	Quantity  int
+	Price     float64
 	TimeStamp int64
 }
 
