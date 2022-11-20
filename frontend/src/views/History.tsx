@@ -1,4 +1,7 @@
 import React, { useEffect } from "react";
+import { Card } from "../components/card/Card";
+import { Container } from "../components/Container";
+import { StonkHistoryList } from "../components/listItems/StonkHistoryList";
 import { useStonkState } from "../model/store";
 
 function History() {
@@ -12,21 +15,20 @@ function History() {
   console.log(stonkInfos);
 
   return (
-    <div>
-      History
+    <Container>
+      <h1>History</h1>
       {stonkInfos?.map((info) => (
         <React.Fragment key={info.Name}>
           <h2>{info.Name}</h2>
-          <ul>
-            {info.MatchHistory?.map((m) => (
-              <li key={m.TimeStamp}>
-                {m.UserBuy} {m.UserSell} {m.Quantity}
-              </li>
-            ))}
-          </ul>
+          <StonkHistoryList stonk={info} />
         </React.Fragment>
       ))}
-    </div>
+      <Card>
+        {(stonkInfos === undefined || stonkInfos.length === 0) && (
+          <h2 className="text-center">No history yet</h2>
+        )}
+      </Card>
+    </Container>
   );
 }
 

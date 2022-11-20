@@ -1,8 +1,9 @@
 import vanillaCreate from "zustand/vanilla";
 import create from "zustand";
 import { StonksServiceClient } from "../services/stonk-client";
-import { Err, Match } from "../services/vo-stonks";
+import { Err } from "../services/vo-stonks";
 import { getClient } from "../services/transport";
+import { persist } from "zustand/middleware";
 import {
   PlaceOrderCmd,
   StonkInfo,
@@ -16,14 +17,18 @@ export type StonksState = {
   // set after successfull regoster/newUser
   // removed after lobby closed or when 401 returned from any service call
   username?: string;
+  currentUser?: User;
   sessionUsers?: User[];
   gameStarted: boolean;
   stonkInfos?: StonkInfo[];
 };
 
 const handleAuthError = (err: Err) => {
-  if (err.message == "user is not an active user") {
-    window.location.href = "/";
+  if (err.message === "user is not an active user") {
+    // do not redirect if already on landing page
+    if (window.location.pathname !== "/" && window.location.pathname !== "") {
+      window.location.href = "/";
+    }
   }
 };
 
@@ -71,7 +76,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
       username: undefined,
       stockDetails: [],
       gameStarted: false,
-      loading: false,
+      loading: true,
 
       register: (name, navigate) => {
         return withLoading(client.newUser(name)).then((resp) => {
@@ -84,15 +89,19 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
               start?: User[];
               finish?: User[];
             };
-            console.log("msg", payload);
-
             // ready to play baby
             if (payload.start) {
-              set({ gameStarted: true });
+              set({
+                gameStarted: true,
+                currentUser: payload.start.find((u) => u.Name === name),
+                sessionUsers: payload.start,
+              });
               navigate(Routes.StartStocks);
+              console.log("staring game");
             } else if (payload.finish) {
               set({ gameStarted: false });
               navigate(Routes.Result);
+              console.log("game over");
             } else if (payload.reload) {
               get().updateState();
             }
@@ -119,7 +128,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
       },
 
       getStonksHistory: async () => {
-        const resp = await Promise.all(
+        let resp = await Promise.all(
           Object.values(StonkName).map((stonkName) =>
             client.getStonkInfo(stonkName)
           )
@@ -132,6 +141,9 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
           }
         }
 
+        // filter out empty infos
+        resp = resp.filter((r) => r.ret.Name !== "");
+
         set({
           stonkInfos: resp.map((resp) => {
             return resp.ret;
@@ -142,6 +154,10 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
       updateState: () => {
         withLoading(client.getUserInfo()).then(
           ({ ret: user, ret_1: users, ret_2: err }) => {
+            if (err != null) {
+              handleAuthError(err);
+              return;
+            }
             set({
               sessionUsers:
                 (users?.filter((user) => user != null) as any) ?? [],

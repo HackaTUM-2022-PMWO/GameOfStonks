@@ -58,12 +58,15 @@ type ServiceHandler struct {
 }
 
 func (wh *ServiceHandler) addStream(w http.ResponseWriter) {
+	wh.l.Info("debugging stream")
+
 	wh.streamsLock.Lock()
 	defer wh.streamsLock.Unlock()
 
 	// make sure we do not already have same request in slice
 	for _, rw := range wh.streams {
 		if rw == w {
+			wh.l.Info("found duplicate stream")
 			return
 		}
 	}
@@ -138,9 +141,6 @@ func (wh *ServiceHandler) Run() {
 			ssePayload = append(ssePayload, payload...)
 			ssePayload = append(ssePayload, []byte("\n\n")...)
 
-			// send message to all clients
-			wh.streamsLock.Lock()
-
 			for _, w := range wh.streams {
 				if _, err := w.Write(ssePayload); err != nil {
 					// remove stream if broken
@@ -154,7 +154,8 @@ func (wh *ServiceHandler) Run() {
 					}
 				}
 			}
-			wh.streamsLock.Unlock()
+
+			// session keep alive
 			// case <-timeout:
 			// 	wh.streamsLock.Lock()
 			// 	for _, w := range wh.streams {
@@ -170,7 +171,6 @@ func (wh *ServiceHandler) Run() {
 			// 		}
 			// 	}
 			// 	wh.streamsLock.Unlock()
-			// }
 		}
 	}
 }
