@@ -42,7 +42,7 @@ var (
 	startMoney    float64       = 1000.0
 	roundDuration time.Duration = 10 * time.Minute
 
-	matcherUpdateInterval time.Duration = time.Millisecond * 2000
+	matcherUpdateInterval time.Duration = time.Second
 )
 
 type ServiceHandler struct {
@@ -222,6 +222,7 @@ func main() {
 	)
 
 	defer match.Close()
+	go match.Start()
 
 	// create some bots so the market has some actual movement
 	bots := make([]bot.Bot, 0, 40)

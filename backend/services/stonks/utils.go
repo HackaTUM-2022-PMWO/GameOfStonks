@@ -11,6 +11,8 @@ import (
 )
 
 func (s *StonksService) update() bool {
+	s.l.Debug("initiating update")
+	defer s.l.Debug("finished update")
 	// drain the updates chanel until it is empty
 	updated := false
 	for {
@@ -29,17 +31,18 @@ func (s *StonksService) update() bool {
 					Time:  time,
 					Value: value,
 				})
+				s.l.Warn("newest timestamp", zap.Int("ts", time))
 			}
 
 			// Add a new entry to the users NetWorthTimeSeries-DataPoints
 			for userId, user := range s.activeUsers {
-				user.mu.Lock()
+				//user.mu.Lock()
 				user.NetWorthTimeSeries = append(user.NetWorthTimeSeries, DataPoint{
 					Time:  user.NetWorthTimeSeries.LatestTime() + 1,
 					Value: user.NetWorthTimeSeries.LatestValue(),
 				})
 				s.activeUsers[userId] = user
-				user.mu.Unlock()
+				//user.mu.Unlock()
 			}
 
 			// update the value to the actual new on if there is a match for this stock
@@ -51,7 +54,7 @@ func (s *StonksService) update() bool {
 
 				// update the users stock position
 				for userId, user := range s.activeUsers {
-					user.mu.Lock()
+					//user.mu.Lock()
 					if userId == match.BuyOrder.User.ID { // if buyer
 						user.Stonks[stonkName] += match.Quantity
 						user.ReservedStonks[stonkName] -= match.Quantity
@@ -61,7 +64,7 @@ func (s *StonksService) update() bool {
 						user.Stonks[stonkName] -= match.Quantity
 						user.Money += float64(match.Quantity) * match.SellOrder.Price
 					} else {
-						user.mu.Unlock()
+						//user.mu.Unlock()
 						continue
 					}
 
@@ -75,7 +78,7 @@ func (s *StonksService) update() bool {
 					user.NetWorthTimeSeries[len(user.NetWorthTimeSeries)-1].Value = user.NetWorth
 
 					s.activeUsers[userId] = user
-					user.mu.Unlock()
+					//user.mu.Unlock()
 				}
 			}
 

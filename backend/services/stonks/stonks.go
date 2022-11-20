@@ -3,7 +3,6 @@ package stonks
 type StonkName string
 
 const (
-	stonkEmpty     StonkName = "" // INVALID!
 	StonkPaperClip StonkName = "paperClip"
 	StonkScissors  StonkName = "scissors"
 	StonkPencil    StonkName = "pencil"
