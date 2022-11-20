@@ -183,7 +183,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
         }
 
         // filter out empty infos
-        resp = resp.filter((r) => r.ret.Name !== "");
+        //resp = resp.filter((r) => r.ret.Name !== "");
 
         set({
           stonkInfos: resp.map((resp) => {

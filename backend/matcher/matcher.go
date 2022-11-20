@@ -68,8 +68,11 @@ func (m *Matcher) Start() {
 			m.l.Info("shutting down")
 			return
 		case <-ticker.C:
+			//m.l.Info("running matcher")
+
 			allMatches := m.matchStonks()
 			if len(allMatches) > 0 {
+				m.l.Info("matcher found new matches")
 				// NOTE: blocking, but the channel is buffered
 				m.matchUpdateCh <- allMatches
 			}
@@ -78,11 +81,18 @@ func (m *Matcher) Start() {
 }
 
 func (m *Matcher) matchStonks() []*store.Match {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
 	var allMatches []*store.Match
 
 	for _, stonk := range m.stonks {
 		// Run the matching process
-		orders, _ := m.orderP.GetOrders(m.ctx, stonk, nil)
+		orders, err := m.orderP.GetOrders(ctx, stonk, nil)
+		if err != nil {
+			m.l.Error("matcher run failed")
+			return nil
+		}
+
 		// sort in ascending order w.r.t. time
 		sort.Slice(orders, func(i, j int) bool {
 			return orders[i].Time.Before(orders[j].Time)
@@ -96,25 +106,41 @@ func (m *Matcher) matchStonks() []*store.Match {
 				buyOrders = append(buyOrders, o)
 			}
 		}
+
+		m.l.Debug("got order",
+			zap.Int("len", len(orders)),
+			zap.Int("buy_len", len(buyOrders)),
+			zap.Int("sell_len", len(sellOrders)),
+		)
+
 		// sort sell price low-high
 		sort.Slice(sellOrders, func(i, j int) bool {
 			return orders[i].Price < orders[j].Price
 		})
+		// sort buy price high-low
+		sort.Slice(buyOrders, func(i, j int) bool {
+			return orders[i].Price > orders[j].Price
+		})
+		m.l.Debug("11", zap.Int("len_matches", len(allMatches)))
 
 		for _, sellOrder := range sellOrders {
-			if len(buyOrders) == 0 || sellOrder.Price > buyOrders[0].Price {
-				// no possible match
-				break
-			}
-
-			qty := sellOrder.Quantity
-
 			// sort buy price high-low
 			sort.Slice(buyOrders, func(i, j int) bool {
 				return orders[i].Price > orders[j].Price
 			})
+			m.l.Debug("23", zap.Int("len_matches", len(allMatches)))
+			// if len(buyOrders) == 0 || sellOrder.Price > buyOrders[0].Price {
+			// 	// no possible match
+			// 	m.l.Info("skipping further checks")
+			// 	break
+			// }
+			m.l.Debug("42", zap.Int("len_matches", len(allMatches)))
+
+			qty := sellOrder.Quantity
 			newBuyOrders := make([]*store.Order, 0, len(buyOrders))
+			m.l.Debug("69", zap.Int("len_matches", len(allMatches)))
 			for _, buyOrder := range buyOrders {
+				m.l.Debug("180", zap.Int("len_matches", len(allMatches)))
 				match := &store.Match{
 					Id:        uuid.New().String(),
 					Stonk:     sellOrder.Stonk,
@@ -124,6 +150,8 @@ func (m *Matcher) matchStonks() []*store.Match {
 					Quantity:  min(qty, buyOrder.Quantity),
 				}
 				allMatches = append(allMatches, match)
+				m.l.Debug("added new match", zap.Int("len_matches", len(allMatches)))
+
 				m.matchP.AddMatch(m.ctx, match)
 
 				qty -= buyOrder.Quantity
@@ -171,6 +199,8 @@ func (m *Matcher) matchStonks() []*store.Match {
 			buyOrders = newBuyOrders
 		}
 	}
+
+	m.l.Debug("finished matchin", zap.Int("len_matches", len(allMatches)))
 
 	return allMatches
 }

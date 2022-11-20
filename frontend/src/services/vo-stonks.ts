@@ -55,7 +55,6 @@ export enum StonkName {
 	StonkPaperClip = "paperClip",
 	StonkPencil = "pencil",
 	StonkScissors = "scissors",
-	StonkEmpty = "",
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.UpdateOrderCmd
 export interface UpdateOrderCmd {

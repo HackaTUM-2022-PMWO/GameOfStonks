@@ -39,11 +39,13 @@ func (p *MemoryMatchPersistor) GetMatches(ctx context.Context, stonk string) ([]
 	filter := bson.D{}
 	if stonk != "" {
 		filter = append(filter, bson.E{Key: "stonk", Value: string(stonk)})
+	} else {
+		filter = append(filter, bson.E{})
 	}
 
 	cur, err := p.col.Find(ctx, filter)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return []*Match{}, nil
+		return nil, mongo.ErrNoDocuments
 	} else if err != nil {
 		p.l.Error("Unable to find matches", zap.Error(err))
 	}

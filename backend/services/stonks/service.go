@@ -315,13 +315,16 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 	// update the prices before we retrieve them
 	updated := s.update()
 	if updated {
-		state := State{
-			Start:  nil,
-			Reload: true,
-			Finish: nil,
-		}
+		go func() {
+			time.Sleep(time.Millisecond * 500)
+			state := State{
+				Start:  nil,
+				Reload: true,
+				Finish: nil,
+			}
 
-		s.sseCh <- state
+			s.sseCh <- state
+		}()
 	}
 
 	ts, ok := s.prices[stonk]
