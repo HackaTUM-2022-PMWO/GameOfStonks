@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"math"
 	"math/rand"
 	"time"
 
@@ -34,21 +35,45 @@ type BadBot struct {
 	user               store.User
 }
 
-func NewGoodBot(i int64, randSellProb, randBuyProb, outsideMarketPrice float64) *GoodBot {
+func NewGoodBot(
+	l *zap.Logger,
+	i int,
+	randSellProb float64,
+	randBuyProb float64,
+	outsideMarketPrice float64,
+	orderP store.OrderPersistor,
+) *GoodBot {
 	return &GoodBot{
+		l:                  l,
 		randSellProb:       randSellProb,
 		randBuyProb:        randBuyProb,
 		outsideMarketPrice: outsideMarketPrice,
-		user:               store.User{ID: uuid.NewString(), Name: fmt.Sprintf("GoodBot%d", i)},
+		orderP:             orderP,
+		user: store.User{
+			ID:   uuid.New().String(),
+			Name: fmt.Sprintf("GoodBot-%d", i),
+		},
 	}
 }
 
-func NewBadBot(i int64, randSellProb, randBuyProb, outsideMarketPrice float64) *BadBot {
+func NewBadBot(
+	l *zap.Logger,
+	i int,
+	randSellProb float64,
+	randBuyProb float64,
+	outsideMarketPrice float64,
+	orderP store.OrderPersistor,
+) *BadBot {
 	return &BadBot{
+		l:                  l,
 		randSellProb:       randSellProb,
 		randBuyProb:        randBuyProb,
 		outsideMarketPrice: outsideMarketPrice,
-		user:               store.User{ID: uuid.NewString(), Name: fmt.Sprintf("BadBot%d", i)},
+		orderP:             orderP,
+		user: store.User{
+			ID:   uuid.New().String(),
+			Name: fmt.Sprintf("BadBot-%d", i),
+		},
 	}
 }
 
@@ -58,9 +83,9 @@ func (b *GoodBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
 			b.orderP.InsertOrder(ctx, store.Order{
 				Id:       uuid.New().String(),
 				Stonk:    stonk,
-				Quantity: int(rand.Float64() * 10.),
+				Quantity: int(math.Max(1, rand.Float64()*10.)),
 				Price:    stonkPrice * (1 - b.outsideMarketPrice),
-				Type:     "buy",
+				Type:     store.OrderTypeBuy,
 				User:     b.user,
 				Time:     time.Now(),
 			})
@@ -69,9 +94,9 @@ func (b *GoodBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
 			b.orderP.InsertOrder(ctx, store.Order{
 				Id:       uuid.New().String(),
 				Stonk:    stonk,
-				Quantity: int(rand.Float64() * 10.),
+				Quantity: int(math.Max(1, rand.Float64()*10.)),
 				Price:    stonkPrice * (1 + b.outsideMarketPrice),
-				Type:     "sell",
+				Type:     store.OrderTypeSell,
 				User:     b.user,
 				Time:     time.Now(),
 			})
@@ -87,9 +112,9 @@ func (b *BadBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
 			b.orderP.InsertOrder(ctx, store.Order{
 				Id:       uuid.New().String(),
 				Stonk:    stonk,
-				Quantity: int(rand.Float64() * 10.),
+				Quantity: int(math.Max(1, rand.Float64()*10.)),
 				Price:    stonkPrice * (1 + b.outsideMarketPrice), // buy above market price
-				Type:     "buy",
+				Type:     store.OrderTypeBuy,
 				User:     b.user,
 				Time:     time.Now(),
 			})
@@ -98,9 +123,9 @@ func (b *BadBot) Execute(ctx context.Context, stonkPrices map[string]float64) {
 			b.orderP.InsertOrder(ctx, store.Order{
 				Id:       uuid.New().String(),
 				Stonk:    stonk,
-				Quantity: int(rand.Float64() * 10.),
+				Quantity: int(math.Max(1, rand.Float64()*10.)),
 				Price:    stonkPrice * (1 - b.outsideMarketPrice), // sell below market price
-				Type:     "sell",
+				Type:     store.OrderTypeSell,
 				User:     b.user,
 				Time:     time.Now(),
 			})
