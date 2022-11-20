@@ -11,7 +11,7 @@ const (
 	StonkMate      StonkName = "mate"
 )
 
-var allStonkNames = []StonkName{
+var AllStonkNames = []StonkName{
 	StonkPaperClip,
 	StonkScissors,
 	StonkPencil,
@@ -20,7 +20,7 @@ var allStonkNames = []StonkName{
 }
 
 func (s StonkName) IsValid() bool {
-	for _, st := range allStonkNames {
+	for _, st := range AllStonkNames {
 		if s == st {
 			return true
 		}

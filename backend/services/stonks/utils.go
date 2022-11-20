@@ -77,7 +77,7 @@ func (s *StonksService) update() bool {
 			// see if there are more updates
 		default:
 			if updated {
-				return true // FIXME: Trigger SSE with new state
+				return true
 			}
 			return false
 		}
@@ -112,6 +112,7 @@ func (s *StonksService) startSession() {
 		// FIXME: Somehow need to handle the case when a session is already
 		// 			active and enough people are in the waiting room again
 		// return &Err{"other session still active"}
+		return
 	}
 
 	// make the waitingUsers the active ones
@@ -144,7 +145,7 @@ func (s *StonksService) startSession() {
 
 		state := State{
 			Start:  nil,
-			Reload: false, // the front-end will start the game so no need to reload the current page
+			Reload: false, // the front-end will end the game so no need to reload the current page
 			Finish: users,
 		}
 		s.sseCh <- state

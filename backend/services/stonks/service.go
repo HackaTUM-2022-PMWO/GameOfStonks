@@ -277,7 +277,7 @@ func (s *StonksService) GetStonkInfo(w http.ResponseWriter, r *http.Request, sto
 		return userOrders[i].TimeStamp > userOrders[j].TimeStamp
 	})
 
-	storeMatches, err := s.matchP.GetMatches(r.Context(), string(stonk), nil)
+	storeMatches, err := s.matchP.GetMatches(r.Context(), string(stonk))
 	if err != nil {
 		s.l.Error("unable to retrieve orders", zap.String("stonk", string(stonk)), zap.Error(err))
 		return StonkInfo{}, &Err{"unable to retrieve orders"}
