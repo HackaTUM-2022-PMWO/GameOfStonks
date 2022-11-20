@@ -1,7 +1,7 @@
 import { BarChart, Line, LineChart, Tooltip } from "recharts";
 import { useStonkState } from "../../model/store";
 import { User } from "../../services/vo-stonks";
-import { PlayerListItem } from "../listItems/PlayerListItem";
+import { colorsForIndex, PlayerListItem } from "../listItems/PlayerListItem";
 
 // GraphComponent used to represent progress of all users
 export type GraphProps = {};
@@ -58,12 +58,19 @@ export const GlobalGraph = (props: GraphProps) => {
 
   return (
     <>
-      <LineChart data={data}>
+      <LineChart width={500} height={300} data={data}>
         <Tooltip />
-        <Line type="monotone" dataKey="uv" stroke="#D043AC" strokeWidth={5} />
+        {users?.map((u, idx) => (
+          <Line
+            type="monotone"
+            dataKey="uv"
+            stroke={colorsForIndex[idx]}
+            strokeWidth={5}
+          />
+        ))}
         <Line type="monotone" dataKey="pv" stroke="#fff" strokeWidth={5} />
       </LineChart>
-      <ul className="flex">
+      <ul className="flex gap-7">
         {users?.map((user, index) => (
           <PlayerListItem
             idx={index}
