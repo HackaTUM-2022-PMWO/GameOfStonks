@@ -98,18 +98,21 @@ func (m *Matcher) matchStonks() []*store.Match {
 		sort.Slice(sellOrders, func(i, j int) bool {
 			return orders[i].Price < orders[j].Price
 		})
-		// sort buy price high-low
-		sort.Slice(buyOrders, func(i, j int) bool {
-			return orders[i].Price > orders[j].Price
-		})
 
 		for _, sellOrder := range sellOrders {
+			if len(buyOrders) == 0 || sellOrder.Price > buyOrders[0].Price {
+				// no possible match
+				break
+			}
+
 			qty := sellOrder.Quantity
+
+			// sort buy price high-low
+			sort.Slice(buyOrders, func(i, j int) bool {
+				return orders[i].Price > orders[j].Price
+			})
+			newBuyOrders := make([]*store.Order, 0, len(buyOrders))
 			for _, buyOrder := range buyOrders {
-				if len(buyOrders) == 0 || sellOrder.Price > buyOrders[0].Price {
-					// no possible match
-					break
-				}
 				match := &store.Match{
 					Id:        uuid.New().String(),
 					Stonk:     sellOrder.Stonk,
@@ -141,8 +144,10 @@ func (m *Matcher) matchStonks() []*store.Match {
 					// update the buyOrder object as well
 					buyOrder.Quantity = -qty
 					m.orderP.DeleteOrder(m.ctx, sellOrder.Id)
+					newBuyOrders = append(newBuyOrders, buyOrder)
 					break // so the sell order loop also continues
 				} else if qty == 0 {
+					// FIXME: Need to remove the buy order from the slice
 					m.orderP.DeleteOrder(m.ctx, buyOrder.Id)
 					m.orderP.DeleteOrder(m.ctx, sellOrder.Id)
 					break // so the sell order loop also continues
@@ -161,6 +166,7 @@ func (m *Matcher) matchStonks() []*store.Match {
 				})
 				// zero case fulfilled above
 			}
+			buyOrders = newBuyOrders
 		}
 	}
 
