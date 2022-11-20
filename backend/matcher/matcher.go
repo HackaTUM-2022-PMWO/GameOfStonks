@@ -105,18 +105,18 @@ func (m *Matcher) matchStonks() []*store.Match {
 
 		for _, sellOrder := range sellOrders {
 			qty := sellOrder.Quantity
-			if len(buyOrders) == 0 || sellOrder.Price > buyOrders[0].Price {
-				// no possible match
-				break
-			}
 			for _, buyOrder := range buyOrders {
+				if len(buyOrders) == 0 || sellOrder.Price > buyOrders[0].Price {
+					// no possible match
+					break
+				}
 				match := &store.Match{
 					Id:        uuid.New().String(),
 					Stonk:     sellOrder.Stonk,
 					SellOrder: *sellOrder,
 					BuyOrder:  *buyOrder,
 					Time:      time.Now(),
-					Quantity:  min(sellOrder.Quantity, buyOrder.Quantity),
+					Quantity:  min(qty, buyOrder.Quantity),
 				}
 				allMatches = append(allMatches, match)
 				m.matchP.AddMatch(m.ctx, match)
@@ -126,6 +126,7 @@ func (m *Matcher) matchStonks() []*store.Match {
 				if qty > 0 {
 					// delete buy order if fulfilled
 					m.orderP.DeleteOrder(m.ctx, buyOrder.Id)
+					// 'qty' has the remaining quantity
 				} else if qty < 0 {
 					// keep buy order if not fulfilled completely & delete sell order
 					m.orderP.UpdateOrder(m.ctx, store.Order{
@@ -137,15 +138,18 @@ func (m *Matcher) matchStonks() []*store.Match {
 						User:     buyOrder.User,
 						Time:     buyOrder.Time,
 					})
+					// update the buyOrder object as well
+					buyOrder.Quantity = -qty
 					m.orderP.DeleteOrder(m.ctx, sellOrder.Id)
+					break // so the sell order loop also continues
 				} else if qty == 0 {
 					m.orderP.DeleteOrder(m.ctx, buyOrder.Id)
 					m.orderP.DeleteOrder(m.ctx, sellOrder.Id)
+					break // so the sell order loop also continues
 				}
-
 			}
 			// keep sell order if some qty left
-			if qty > 0 {
+			if len(buyOrders) > 0 && qty > 0 {
 				m.orderP.UpdateOrder(m.ctx, store.Order{
 					Id:       sellOrder.Id,
 					Stonk:    sellOrder.Stonk,
