@@ -14,6 +14,7 @@ import { useStonkState } from "../model/store";
 import { getTradeUrl, Routes } from "../router/router";
 import { StonkInfo, StonkName } from "../services/vo-stonks";
 import SvgEdit from "../icons/Edit";
+import {StonkHistoryList} from "../components/listItems/StonkHistoryList";
 
 const formatter = new Intl.NumberFormat("en-IN", {
   maximumSignificantDigits: 3,
@@ -76,7 +77,6 @@ function Detail() {
             />
           </h2>
         </div>
-
         <StonkGraph stonk={stonk} />
       </Card>
       <Card className="mx-0">
@@ -99,17 +99,7 @@ function Detail() {
           ))}
         </ul>
       </Card>
-
-      <Card className="mx-0">
-        <h2>History</h2>
-        <ul>
-          {stonk.MatchHistory?.map((order, index) => (
-            <li key={index} className="flex ">
-              {order.UserSell} <SvgArrowRight /> {order.UserSell}
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <StonkHistoryList stonk={stonk}/>
       <div className="flex justify-evenly">
         <RouterButton className="py-4 px-8" route={getTradeUrl(stonkName!, "sell") as Routes}>
           <div className="flex items-center gap-4">
