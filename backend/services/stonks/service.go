@@ -7,6 +7,7 @@ import (
 	time "time"
 
 	"github.com/google/uuid"
+	"github.com/hackaTUM/GameOfStonks/bot"
 	"github.com/hackaTUM/GameOfStonks/store"
 	"go.uber.org/zap"
 )
@@ -34,6 +35,9 @@ type StonksService struct {
 	orderP store.OrderPersistor
 	matchP store.MatchPersistor
 
+	// bots that influence the market
+	bots []bot.Bot
+
 	matchUpdateCh <-chan []*store.Match
 
 	sseCh chan State
@@ -51,10 +55,11 @@ func NewStonksService(
 	roundDuration time.Duration,
 	orderP store.OrderPersistor,
 	matchP store.MatchPersistor,
+	bots []bot.Bot,
 	matchUpdateCh <-chan []*store.Match,
 	sseCh chan State,
 ) *StonksService {
-	return &StonksService{
+	service := &StonksService{
 		l:             l.With(zap.String("component", "service")),
 		prices:        NewPrices(initialStonkPrices),
 		startMoney:    startMoney,
@@ -62,12 +67,15 @@ func NewStonksService(
 		roundDuration: roundDuration,
 		orderP:        orderP,
 		matchP:        matchP,
+		bots:          bots,
 		matchUpdateCh: matchUpdateCh,
 		sseCh:         sseCh,
 
 		waitingUsers: make(map[string]*User, 5),
 		activeUsers:  make(map[string]*User, 5),
 	}
+
+	return service
 }
 
 type State struct {
@@ -178,7 +186,12 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 	s.waitingUsers[u.id] = u
 
 	// Set a cookie
-	cookie := &http.Cookie{Name: "user", Value: u.id, Expires: time.Now().Add(time.Hour * 24 * 7)}
+	cookie := &http.Cookie{
+		Name:    "user",
+		Value:   u.id,
+		Expires: time.Now().Add(time.Hour * 24 * 7),
+		Path:    "/",
+	}
 	http.SetCookie(w, cookie)
 
 	users := make([]*User, 0, len(s.waitingUsers))
