@@ -69,8 +69,10 @@ func (m *Matcher) Start() {
 			return
 		case <-ticker.C:
 			allMatches := m.matchStonks()
-			// NOTE: blocking, but the channel is buffered
-			m.matchUpdateCh <- allMatches
+			if len(allMatches) > 0 {
+				// NOTE: blocking, but the channel is buffered
+				m.matchUpdateCh <- allMatches
+			}
 		}
 	}
 }
