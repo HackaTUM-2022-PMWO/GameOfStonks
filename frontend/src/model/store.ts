@@ -100,6 +100,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
                 gameStarted: true,
                 currentUser: payload.start.find((u) => u.Name === name),
                 sessionUsers: payload.start,
+                // roundDuration: payloa
               });
               navigate(Routes.StartStocks);
               console.log("staring game");

@@ -83,7 +83,29 @@ function Detail() {
         </h2>
         <StonkGraph stonk={stonk} />
       </Card>
+<<<<<<< HEAD
       <div className="flex justify-start gap-5 mx-7">
+=======
+      <Card className="mx-0">
+        <h2>Pending Orders</h2>
+        <ul>
+          {stonk.UserOrders?.map((order, index) => (
+            <li className="py-5 border-b-foreground border-b-2" key={index}>
+              You ordered {order.Quantity} @ {order.Price} <Currency/> 
+            </li>
+          ))}
+          {stonk.Orders?.map((order, index) => (
+            <li key={index} className="py-5 border-b-foreground border-b-2">
+              {order.UserName} {order.Quantity} @ {order.Price} <Currency/> 
+            </li>
+          ))}
+        </ul>
+      </Card>
+      {stonk.MatchHistory && stonk.MatchHistory.length > 0 && (
+        <StonkHistoryList stonk={stonk} />
+      )}
+      <div className="flex justify-evenly">
+>>>>>>> 7fe16777dae9ad84e1a4f537a332535b8f31e571
         <RouterButton
           className="py-4 px-8"
           route={getTradeUrl(stonkName!, "sell") as Routes}

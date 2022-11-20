@@ -71,9 +71,10 @@ func NewStonksService(
 }
 
 type State struct {
-	Start  []*User `json:"start,omitempty"`
-	Reload bool    `json:"reload"`
-	Finish []*User `json:"finish,omitempty"`
+	Start         []*User       `json:"start,omitempty"`
+	RoundDuration time.Duration `json:"roundDuration,omitempty"`
+	Reload        bool          `json:"reload"`
+	Finish        []*User       `json:"finish,omitempty"`
 }
 
 type User struct {
@@ -103,6 +104,7 @@ type Order struct {
 	UserName  string
 	OrderType OrderType
 	Quantity  int
+	Price     float64
 	TimeStamp int64
 }
 
