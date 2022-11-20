@@ -1,6 +1,12 @@
 import {Card} from "../components/card/Card";
+import {StonkName} from "../services/vo-stonks";
+import {useState} from "react";
+import {StonkPositionList} from "../components/listItems/StonkPositionList";
 
 function Search() {
+
+    const [query, setQuery] = useState("");
+
     return (
         <div className="flex flex-col min-h-screen mt-5 mx-5">
             <div className="m-10">
@@ -15,7 +21,7 @@ function Search() {
                                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
-                    <input type="search" id="default-search"
+                    <input type="search" id="default-search" value={query} onChange={(event) => setQuery(event.target.value)}
                            className="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
                            placeholder="Search Stonks..." required/>
                     <button type="submit"
@@ -25,7 +31,7 @@ function Search() {
             </form>
             </div>
             <Card>
-
+                <StonkPositionList stonks={Object.values(StonkName).filter(val => val.valueOf().includes(query) && val !== "")} />
             </Card>
         </div>
 

@@ -3,9 +3,9 @@ import { Airplay, AtSign, X } from "../../icons";
 import SvgAtSign from "../../icons/AtSign";
 import SvgChevronRight from "../../icons/ChevronRight";
 import { getStonkUrl, Routes } from "../../router/router";
-import { StonkInfo } from "../../services/vo-stonks";
+import {StonkInfo, StonkName} from "../../services/vo-stonks";
 
-export type StonkPositionListProps = { stonks: StonkInfo[] };
+export type StonkPositionListProps = { stonks: (StonkInfo[] | StonkName[]) };
 
 // TODO: verify stonk position datatype with @bosastic
 export const StonkPositionList = (props: StonkPositionListProps) => {
@@ -14,10 +14,10 @@ export const StonkPositionList = (props: StonkPositionListProps) => {
       <h2>Stonks</h2>
       <ul className="list-none">
         {props.stonks.map((stonk) => (
-          <Link to={getStonkUrl(stonk.Name)}>
+          <Link to={typeof stonk === "string" ? getStonkUrl(stonk) : getStonkUrl(stonk.Name)}>
             <li className="flex items-center justify-between text-lg gap-5 py-5 border-t-1">
               <span className="flex items-center gap-1">
-                <span>{stonk.Name}</span>
+                <span>{typeof stonk === "string" ? stonk : stonk.Name}</span>
               </span>
               <div className="flex items-center justify-end gap-5">
                 <span className="flex items-center gap-1">
