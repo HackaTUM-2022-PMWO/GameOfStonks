@@ -36,6 +36,7 @@ func orderTypeToStonksVo(t store.OrderType) OrderType {
 
 func orderToStonksVo(o *store.Order) Order {
 	return Order{
+		Id:        o.Id,
 		UserName:  o.User.Name,
 		OrderType: orderTypeToStonksVo(o.Type),
 		Quantity:  o.Quantity,

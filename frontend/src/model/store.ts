@@ -196,7 +196,7 @@ export const vanillaStore = vanillaCreate<StonksState & StonksModifiers>(
           withLoading(
             client
               .updateOrder({
-                Id: order.UserName,
+                Id: order.Id,
                 Price: order.Price,
                 Quantity: order.Quantity,
               })

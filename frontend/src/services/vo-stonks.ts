@@ -21,6 +21,7 @@ export interface Match {
 }
 // github.com/hackaTUM/GameOfStonks/services/stonks.Order
 export interface Order {
+	Id:string;
 	UserName:string;
 	OrderType:github_com_hackaTUM_GameOfStonks_services_stonks.OrderType;
 	Quantity:number;

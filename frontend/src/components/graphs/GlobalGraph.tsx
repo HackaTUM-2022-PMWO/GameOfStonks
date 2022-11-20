@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BarChart, Line, LineChart, Tooltip } from "recharts";
+import { BarChart, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 import { useStonkState } from "../../model/store";
 import { User } from "../../services/vo-stonks";
 import { colorsForIndex, PlayerListItem } from "../listItems/PlayerListItem";
@@ -88,7 +88,8 @@ export const GlobalGraph = (props: GraphProps) => {
 
   return (
     <>
-      <LineChart width={400} height={300} data={data}>
+      <LineChart width={400} height={300} data={data ?? []}>
+        {/* <XAxis type="category" domain={[0, 100]} /> */}
         <Tooltip
           wrapperStyle={{
             outline: "none",
@@ -101,7 +102,8 @@ export const GlobalGraph = (props: GraphProps) => {
         {users?.map((u, idx) => (
           <Line
             type="monotone"
-            dataKey={idx}
+            dataKey="Value"
+            data={u.NetWorthTimeSeries}
             stroke={colorsForIndex[idx]}
             strokeWidth={5}
           />

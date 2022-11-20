@@ -17,7 +17,7 @@ const colors = [
 ];
 
 export function PlayerListItem(props: { idx: number; value: string }) {
-  const avatar = require(`../../assets/avatar/${props.idx}.jpg`);
+  const avatar = `/avatar/${props.idx}.jpg`;
 
   return (
     <li className="flex inline-flex flex-row bg-foreground rounded-3xl p-2 items-center space-x-3 px-3 pr-5 content-center">
@@ -34,7 +34,7 @@ export function PlayerListItem(props: { idx: number; value: string }) {
 }
 
 export function PlayerTag(props: { idx: number; value: string }) {
-  const avatar = require(`../../assets/avatar/${props.idx}.jpg`);
+  const avatar = `/avatar/${props.idx}.jpg`;
 
   return (
     <span className="inline-flex flex-row bg-foreground rounded-3xl p-1 items-center space-x-2 px-1 pr-3 content-center">

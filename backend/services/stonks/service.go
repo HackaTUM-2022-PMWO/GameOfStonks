@@ -109,6 +109,7 @@ type Match struct {
 }
 
 type Order struct {
+	Id        string
 	UserName  string
 	OrderType OrderType
 	Quantity  int
@@ -190,7 +191,6 @@ func (s *StonksService) NewUser(w http.ResponseWriter, r *http.Request, name str
 		Name:    "user",
 		Value:   u.id,
 		Expires: time.Now().Add(time.Hour * 24 * 7),
-		Path:    "/",
 	}
 	http.SetCookie(w, cookie)
 
@@ -525,6 +525,12 @@ func (s *StonksService) UpdateOrder(w http.ResponseWriter, r *http.Request, cmd 
 			zap.Error(err),
 		)
 		return &Err{"unable to get previous order"}
+	} else if order == nil {
+		s.l.Error("unknown previous order",
+			zap.String("order_id", cmd.Id),
+			zap.Error(err),
+		)
+		return &Err{"unknown previous order"}
 	}
 
 	// if the quantity is set to 0 we are actually deleting the order
